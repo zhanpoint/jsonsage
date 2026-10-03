@@ -2,10 +2,10 @@ node_modules
 dist
 .git
 .github
-.21st
 .env
 .ops
-artifacts
+README.md
+preview.png
 public/vendor
 *.tsbuildinfo
 *.log

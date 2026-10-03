@@ -7,4 +7,3 @@ dist/
 public/vendor/
 .env
 .ops/
-artifacts/
