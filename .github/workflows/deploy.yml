@@ -38,6 +38,7 @@ jobs:
       SSH_HOST: ${{ vars.SSH_HOST }}
       SSH_PORT: ${{ vars.SSH_PORT }}
       SSH_USER: ${{ vars.SSH_USER }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
     steps:
       - name: Configure deployment identity
         env:
@@ -45,6 +46,7 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           test -n "$SSH_HOST" && test -n "$SSH_PORT" && test -n "$SSH_USER"
+          test -n "$PUBLIC_URL"
           test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_KNOWN_HOSTS"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
@@ -64,11 +66,11 @@ jobs:
       - name: Verify the public release
         if: steps.release.outputs.deployed == 'true'
         run: |
-          curl --fail --silent --show-error --retry 5 --retry-delay 2 "http://$SSH_HOST/healthz"
-          actual=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 "http://$SSH_HOST/version.json")
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 "$PUBLIC_URL/healthz"
+          actual=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 "$PUBLIC_URL/version.json")
           test "$actual" = "{\"revision\":\"$GITHUB_SHA\"}"
-          curl --fail --silent --show-error --head "http://$SSH_HOST/vendor/jq.mjs" | grep -iq '^content-type: application/javascript'
-          curl --fail --silent --show-error --head "http://$SSH_HOST/vendor/jq.wasm" | grep -iq '^content-type: application/wasm'
+          curl --fail --silent --show-error --head "$PUBLIC_URL/vendor/jq.mjs" | grep -iq '^content-type: application/javascript'
+          curl --fail --silent --show-error --head "$PUBLIC_URL/vendor/jq.wasm" | grep -iq '^content-type: application/wasm'
           echo "Verified release $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary identity
         if: always()

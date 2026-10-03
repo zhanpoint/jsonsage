@@ -1,6 +1,6 @@
 # 自动部署
 
-生产入口：[http://47.82.79.170](http://47.82.79.170)。项目目录为 `/opt/jsonsage`，主分支为 `main`。
+生产入口：[https://jsonsage.dreamlog.xyz](https://jsonsage.dreamlog.xyz)。项目目录为 `/opt/jsonsage`，主分支为 `main`。
 
 每次推送到 `main`，GitHub Actions 先执行无用代码检查、功能测试和生产构建，再通过专用 SSH 密钥让服务器构建并更新 Docker Compose 容器。拉取请求只运行检查，不发布。服务器只接受当前 `origin/main` 的完整提交 SHA，过期流水线跳过发布。
 
@@ -13,9 +13,9 @@ GitHub 的 `production` 环境只需要两项密钥：
 | `SSH_PRIVATE_KEY` | JsonSage 专用部署密钥 |
 | `SSH_KNOWN_HOSTS` | 已验证的服务器 SSH 主机公钥 |
 
-非敏感环境变量为 `SSH_HOST=47.82.79.170`、`SSH_PORT=22`、`SSH_USER=root`。使用公开仓库，不需要 GitHub 密码、仓库访问令牌或镜像仓库密钥。
+非敏感环境变量为 `SSH_HOST=47.82.79.170`、`SSH_PORT=22`、`SSH_USER=root`、`PUBLIC_URL=https://jsonsage.dreamlog.xyz`。SSH 连接地址与公网验证地址分别配置，域名变更不需要替换 SSH 密钥。使用公开仓库，不需要 GitHub 密码、仓库访问令牌或镜像仓库密钥。
 
-服务器 `.env` 仅保存 `APP_PORT=8088` 和 `PUBLIC_HOST=47.82.79.170`。容器只监听 `127.0.0.1:8088`，主机 Nginx 通过独立的 `/etc/nginx/conf.d/jsonsage.conf` 转发 IP 地址请求。其他项目的配置不需要修改。
+服务器 `.env` 仅保存 `APP_PORT=8088` 和 `PUBLIC_HOST=jsonsage.dreamlog.xyz`。容器只监听 `127.0.0.1:8088`，主机 Nginx 通过独立的 `/etc/nginx/conf.d/jsonsage-domain.conf` 提供域名 HTTPS 访问，原 IP 入口由 `jsonsage.conf` 保留。其他项目的配置不需要修改。
 
 部署密钥在服务器 `authorized_keys` 中使用 `restrict` 和强制命令，只允许 `deploy <提交 SHA>`；不能通过该密钥打开交互式 Shell 或转发端口。入口脚本放在 `.ops/ssh-entrypoint.sh`，运行记录和发布锁也放在 `.ops/`，不进入 Git。
 
@@ -38,6 +38,28 @@ curl -fsS http://127.0.0.1:8088/version.json
 
 运行镜像仅包含静态资源及 Nginx，以非 root 用户运行，根文件系统只读，临时文件限制在 `/tmp`；容器有内存、进程数及日志大小限制。JSON 解析和转换仍在浏览器本地完成，服务器不接收输入内容。
 
-当前按要求使用 HTTP IP 入口。浏览器的 PWA 安装、离线缓存及部分剪贴板 API 需要 HTTPS 或 localhost；后续接入域名及 HTTPS 后即可启用这些浏览器能力。
+## 域名与证书
+
+阿里云 DNS 使用一条 A 记录：主域名 `dreamlog.xyz`、主机记录 `jsonsage`、值 `47.82.79.170`、TTL 600 秒。使用已经配置好凭据的阿里云 CLI 查询：
+
+```powershell
+aliyun alidns DescribeSubDomainRecords --SubDomain jsonsage.dreamlog.xyz --Type A
+```
+
+首次添加时使用以下命令；已有记录应查询其 `RecordId` 后更新，避免重复添加：
+
+```powershell
+aliyun alidns AddDomainRecord --DomainName dreamlog.xyz --RR jsonsage --Type A --Value 47.82.79.170 --TTL 600
+```
+
+证书由服务器现有 Certbot 申请和自动续期，HTTP 验证目录为 `/var/www/letsencrypt`。HTTPS 配置模板为 `deploy/nginx.https.conf.template`；部署模板时仅替换 `PUBLIC_HOST` 和 `APP_PORT`，保留 Nginx 自身变量。域名的 HTTP 请求自动跳转到 HTTPS，续期验证路径保留 HTTP 访问。
+
+续期配置保存 Nginx 校验和重载钩子，现有 `snap.certbot.renew.timer` 自动执行续期。管理员可检查该域名的续期能力：
+
+```sh
+certbot renew --cert-name jsonsage.dreamlog.xyz --dry-run
+```
+
+HTTPS 入口支持浏览器安全上下文要求的剪贴板和 Service Worker；PWA 安装按钮仍取决于浏览器是否提供安装事件。原 HTTP IP 入口不具备这些安全上下文能力。
 
 实现依据：[Docker 多阶段构建](https://docs.docker.com/build/building/multi-stage/)、[Compose 健康等待](https://docs.docker.com/reference/cli/docker/compose/up/)、[GitHub Actions 密钥](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)、[Nginx 静态资源路由](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files)。

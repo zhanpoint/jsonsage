@@ -57,7 +57,7 @@ JQ 投影保留未参与运算的数值原文，但 JQ 的数值运算仍遵循�
 
 ## 生产部署
 
-访问 [JsonSage](http://47.82.79.170)。推送到 `main` 后，GitHub Actions 自动检查、构建并更新服务器 Docker Compose 容器，健康检查失败自动回滚。配置与维护方法见 [DEPLOYMENT.md](DEPLOYMENT.md)，运行情况见 [GitHub Actions](https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml)。
+访问 [JsonSage](https://jsonsage.dreamlog.xyz)。推送到 `main` 后，GitHub Actions 自动检查、构建并更新服务器 Docker Compose 容器，健康检查失败自动回滚。配置与维护方法见 [DEPLOYMENT.md](DEPLOYMENT.md)，运行情况见 [GitHub Actions](https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml)。
 
 主编辑器和对比编辑器共用命令路由，格式化、查找、撤销与重做跟随最后聚焦的可编辑栏；隐藏或已卸载编辑器不接收操作。CodeMirror 的原生编辑历史和查找替换继续使用官方实现。
 
