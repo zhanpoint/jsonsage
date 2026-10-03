@@ -1,0 +1,51 @@
+{
+  "name": "jsonsage",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/prepare-vendor.mjs",
+    "prebuild": "node scripts/prepare-vendor.mjs",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "check:unused": "knip --no-progress",
+    "benchmark": "node --expose-gc --import tsx scripts/benchmark.ts",
+    "test": "tsx tests/engine.test.ts && tsx tests/repair.test.ts && tsx tests/transforms.test.ts && tsx tests/views.test.ts && tsx tests/codeEditor.test.ts && tsx tests/analysis.test.ts && tsx tests/features.test.ts && tsx tests/shortcuts.test.ts && tsx tests/importDocument.test.ts"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.8.0",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@lezer/highlight": "^1.2.5",
+    "@tanstack/react-virtual": "^3.14.13",
+    "@xyflow/react": "^12.12.0",
+    "cmdk": "^1.1.1",
+    "jq-web": "^0.6.2",
+    "jsonc-parser": "^3.3.1",
+    "jsonpath-plus": "^11.1.1",
+    "jsonrepair": "^3.15.0",
+    "lossless-json": "^4.3.1",
+    "lucide-react": "^0.468.0",
+    "quicktype-core": "^26.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "shell-quote": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.2.0",
+    "knip": "^6.39.0",
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2",
+    "vite": "^7.3.6",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

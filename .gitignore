@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+*.tgz
+*.log
+.DS_Store
+public/vendor/
+.env
+.ops/
+artifacts/

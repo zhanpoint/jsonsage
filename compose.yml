@@ -1,0 +1,25 @@
+name: jsonsage
+services:
+  app:
+    image: ${JSONSAGE_IMAGE:?Set JSONSAGE_IMAGE to the release image}
+    build:
+      context: .
+      args:
+        APP_REVISION: ${APP_REVISION:?Set APP_REVISION to the commit SHA}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:?Set APP_PORT}:8080"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    mem_limit: 128m
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

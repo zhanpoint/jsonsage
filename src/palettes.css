@@ -1,0 +1,77 @@
+/* Colors adapted from serafimcloud's 21st.dev themes; editor surfaces are tuned for clearer contrast. */
+.app-shell[data-palette="zen-linen"] { --p-bg: #e9e4d8; --p-fg: #1e1e1e; --p-card: #f4efe4; --p-editor: #fffaf0; --p-border: #d2cbbb; --p-primary: #2e2e2e; --p-interactive: #2e2e2e; --p-muted: #cfc8b8; --p-popover: #f4efe4; }
+.app-shell[data-palette="zen-linen"][data-theme="dark"] { --p-bg: #141414; --p-fg: #e8e3da; --p-card: #242321; --p-editor: #302d28; --p-border: #383630; --p-primary: #d1cfc0; --p-interactive: #d1cfc0; --p-muted: #2a2a2a; --p-popover: #242321; }
+.app-shell[data-palette="amber-slate"] { --p-bg: #e8ebed; --p-fg: #333; --p-card: #fff; --p-editor: #f3f7fa; --p-border: #ccc; --p-primary: #df6035; --p-interactive: #a84223; --p-muted: #e8edf2; --p-popover: #fff; }
+.app-shell[data-palette="amber-slate"][data-theme="dark"] { --p-bg: #1a1a1a; --p-fg: #e5e5e5; --p-card: #292929; --p-editor: #273241; --p-border: #414141; --p-primary: #df6035; --p-interactive: #f28560; --p-muted: #303030; --p-popover: #292929; }
+.app-shell[data-palette="nature"] { --p-bg: #e4ebdf; --p-fg: #3e2723; --p-card: #fffdf7; --p-editor: #f5faf0; --p-border: #d2dfc9; --p-primary: #2e7d32; --p-interactive: #1b5e20; --p-muted: #e4eddf; --p-popover: #fffdf7; }
+.app-shell[data-palette="nature"][data-theme="dark"] { --p-bg: #1c2a1f; --p-fg: #f0ebe5; --p-card: #2d3a2e; --p-editor: #354a37; --p-border: #465848; --p-primary: #4caf50; --p-interactive: #81c784; --p-muted: #29382b; --p-popover: #2d3a2e; }
+.app-shell[data-palette="ocean-breeze"] { --p-bg: #dbeefa; --p-fg: #374151; --p-card: #fff; --p-editor: #f3faff; --p-border: #ccdfeb; --p-primary: #22c55e; --p-interactive: #047857; --p-muted: #dceff8; --p-popover: #fff; }
+.app-shell[data-palette="ocean-breeze"][data-theme="dark"] { --p-bg: #0f172a; --p-fg: #d1d5db; --p-card: #1e293b; --p-editor: #223c4c; --p-border: #4b5563; --p-primary: #34d399; --p-interactive: #34d399; --p-muted: #192d3a; --p-popover: #1e293b; }
+.app-shell[data-palette]:not([data-palette="default"]) {
+  --p-subtle: color-mix(in srgb, var(--p-fg) 64%, var(--p-bg));
+  --p-faint: color-mix(in srgb, var(--p-fg) 44%, var(--p-bg));
+  --p-line: color-mix(in srgb, var(--p-border) 65%, var(--p-card));
+  --p-hover: color-mix(in srgb, var(--p-primary) 12%, var(--p-card));
+  --tip-bg: var(--p-popover);
+  --tip-border: var(--p-border);
+  --tip-fg: var(--p-fg);
+  --tip-shadow: 0 9px 22px color-mix(in srgb, var(--p-fg) 18%, transparent);
+  background: var(--p-bg);
+  color: var(--p-fg);
+}
+.app-shell[data-palette]:not([data-palette="default"]) .topbar { background: var(--p-bg); border-color: var(--p-border); }
+.app-shell[data-palette]:not([data-palette="default"]) .brand { color: var(--p-fg); }
+.app-shell[data-palette]:not([data-palette="default"]) .brand-mark { background: var(--p-card); box-shadow: 0 1px 4px color-mix(in srgb, var(--p-fg) 12%, transparent); }
+.app-shell[data-palette]:not([data-palette="default"]) .editor-card,
+.app-shell[data-palette]:not([data-palette="default"]) .details-card { background: var(--p-card); border-color: var(--p-border); box-shadow: 0 8px 24px color-mix(in srgb, var(--p-fg) 6%, transparent); }
+.app-shell[data-palette]:not([data-palette="default"]) .editor-toolbar,
+.app-shell[data-palette]:not([data-palette="default"]) .editor-footer,
+.app-shell[data-palette]:not([data-palette="default"]) .details-heading,
+.app-shell[data-palette]:not([data-palette="default"]) .details-footer,
+.app-shell[data-palette]:not([data-palette="default"]) .issue-row { border-color: var(--p-line); }
+.app-shell[data-palette]:not([data-palette="default"]) .editor-card:focus-within { border-color: var(--p-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary) 15%, transparent); }
+.app-shell[data-palette]:not([data-palette="default"]) .file-name:focus-visible { border-color: var(--p-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary) 15%, transparent); }
+.app-shell[data-palette]:not([data-palette="default"]) .file-name,
+.app-shell[data-palette]:not([data-palette="default"]) .issue-title,
+.app-shell[data-palette]:not([data-palette="default"]) .empty-state strong { color: var(--p-fg); }
+.app-shell[data-palette]:not([data-palette="default"]) .file-label,
+.app-shell[data-palette]:not([data-palette="default"]) .mode-switch,
+.app-shell[data-palette]:not([data-palette="default"]) .tool-button,
+.app-shell[data-palette]:not([data-palette="default"]) .issue-content p,
+.app-shell[data-palette]:not([data-palette="default"]) .editor-footer,
+.app-shell[data-palette]:not([data-palette="default"]) .details-footer,
+.app-shell[data-palette]:not([data-palette="default"]) .page-footer,
+.app-shell[data-palette]:not([data-palette="default"]) .privacy-note { color: var(--p-subtle); }
+.app-shell[data-palette]:not([data-palette="default"]) .file-label svg,
+.app-shell[data-palette]:not([data-palette="default"]) .page-footer a,
+.app-shell[data-palette]:not([data-palette="default"]) .page-footer a:hover,
+.app-shell[data-palette]:not([data-palette="default"]) .privacy-lock { color: var(--p-interactive); }
+.app-shell[data-palette]:not([data-palette="default"]) .tab-count,
+.app-shell[data-palette]:not([data-palette="default"]) kbd { background: var(--p-muted); color: var(--p-subtle); border-color: var(--p-border); }
+.app-shell[data-palette]:not([data-palette="default"]) .switch-track { border-color: var(--p-border); background: var(--p-muted); }
+.app-shell[data-palette]:not([data-palette="default"]) .mode-switch input:checked + .switch-track { border-color: var(--p-primary); background: var(--p-primary); }
+.app-shell[data-palette]:not([data-palette="default"]) .mode-switch:hover { background: var(--p-hover); }
+.app-shell[data-palette]:not([data-palette="default"]) .mode-switch:has(input:checked) .mode-label { color: var(--p-interactive); }
+.app-shell[data-palette]:not([data-palette="default"]) .header-control { color: var(--p-subtle); }
+.app-shell[data-palette]:not([data-palette="default"]) button:focus-visible,
+.app-shell[data-palette]:not([data-palette="default"]) a:focus-visible,
+.app-shell[data-palette]:not([data-palette="default"]) input:focus-visible { outline-color: var(--p-primary); }
+.app-shell[data-palette]:not([data-palette="default"]) .header-control:hover,
+.app-shell[data-palette]:not([data-palette="default"]) .language-trigger[aria-expanded="true"],
+.app-shell[data-palette]:not([data-palette="default"]) .palette-trigger[aria-expanded="true"],
+.app-shell[data-palette]:not([data-palette="default"]) .tool-button:hover:not(:disabled) { background: var(--p-hover); color: var(--p-interactive); }
+.app-shell[data-palette]:not([data-palette="default"]) .language-options,
+.app-shell[data-palette]:not([data-palette="default"]) .palette-options { background: var(--p-popover); border-color: var(--p-border); }
+.app-shell[data-palette]:not([data-palette="default"]) .language-option,
+.app-shell[data-palette]:not([data-palette="default"]) .palette-option { color: var(--p-fg); }
+.app-shell[data-palette]:not([data-palette="default"]) .language-option:hover,
+.app-shell[data-palette]:not([data-palette="default"]) .language-option:focus-visible,
+.app-shell[data-palette]:not([data-palette="default"]) .palette-option:hover,
+.app-shell[data-palette]:not([data-palette="default"]) .palette-option:focus-visible { background: var(--p-hover); color: var(--p-interactive); }
+.app-shell[data-palette]:not([data-palette="default"]) .language-option[aria-pressed="true"],
+.app-shell[data-palette]:not([data-palette="default"]) .palette-option[aria-pressed="true"] { color: var(--p-interactive); }
+.app-shell[data-palette]:not([data-palette="default"]) .palette-heading,
+.app-shell[data-palette]:not([data-palette="default"]) .issue-location { color: var(--p-faint); }
+.app-shell[data-palette]:not([data-palette="default"]) .toolbar-separator,
+.app-shell[data-palette]:not([data-palette="default"]) .details-footer i { background: var(--p-border); }
+.app-shell[data-palette]:not([data-palette="default"]) .issues-list { scrollbar-color: var(--p-border) transparent; }

@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import { defaultShortcuts, commandDefinitions } from '../src/lib/commands';
+import { readShortcuts, shortcutConflict, shortcutFromEvent, shortcutLabel } from '../src/lib/shortcuts';
+
+const key = (code: string, modifiers: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }> = {}, value = code.replace(/^(Key|Digit)/, '')) => ({ code, key: value, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...modifiers });
+assert.equal(new Set(Object.values(defaultShortcuts)).size, Object.keys(commandDefinitions).length);
+assert.equal(shortcutFromEvent(key('KeyK', { ctrlKey: true })), defaultShortcuts.palette);
+assert.equal(shortcutFromEvent(key('KeyK', { metaKey: true })), defaultShortcuts.palette);
+assert.equal(shortcutFromEvent(key('Digit2', { ctrlKey: true, altKey: true })), defaultShortcuts.tree);
+assert.equal(shortcutFromEvent(key('Digit2', { ctrlKey: true, altKey: true, shiftKey: true }, '@')), 'Mod+Alt+Shift+2');
+assert.equal(shortcutFromEvent(key('KeyF', { ctrlKey: true, altKey: true }, 'а')), 'Mod+Alt+F', 'Physical shortcuts must not depend on keyboard layout');
+assert.equal(shortcutFromEvent(key('KeyA')), null, 'Normal typing must remain native');
+assert.equal(shortcutFromEvent(key('ControlLeft', { ctrlKey: true }, 'Control')), null);
+assert.equal(shortcutFromEvent(key('F8')), 'F8');
+assert.equal(shortcutFromEvent(key('F8', { shiftKey: true })), 'Shift+F8');
+assert.equal(readShortcuts(JSON.stringify({ format: 'Shift+F8' })).format, 'Shift+F8');
+assert.equal(shortcutConflict(defaultShortcuts, 'format', defaultShortcuts.repair), 'repair');
+assert.equal(shortcutConflict(defaultShortcuts, 'format', defaultShortcuts.format), undefined);
+const customized = { ...defaultShortcuts, format: 'Mod+Alt+Shift+F', graph: 'Mod+Alt+Slash' };
+assert.deepEqual(readShortcuts(JSON.stringify(customized)), customized);
+assert.deepEqual(readShortcuts('{bad'), defaultShortcuts);
+assert.deepEqual(readShortcuts(JSON.stringify({ format: 'A' })), defaultShortcuts);
+assert.deepEqual(readShortcuts(JSON.stringify({ format: defaultShortcuts.repair })), defaultShortcuts);
+assert.equal(shortcutLabel('Mod+Alt+Enter'), 'Ctrl/⌘ + Alt + ↵');
+console.log('Unique defaults, physical keyboard layouts, rebinding, collision and preference recovery checks passed.');
