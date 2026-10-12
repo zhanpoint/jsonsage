@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Settings, Keyboard, ChevronRight } from 'lucide-react';
 import type { Indent } from '../lib/json/transforms';
+import { HelpTooltip } from './ui/HelpTooltip';
 
 interface Props {
   language: 'en' | 'zh';
@@ -30,7 +31,7 @@ export function EditorSettings({ language, indent, onIndentChange, onShortcuts }
     };
   }, [open]);
   return <div className="editor-settings" ref={rootRef}>
-    <button ref={buttonRef} className="header-control" type="button" aria-label={zh ? '编辑器设置' : 'Editor settings'} data-tooltip={zh ? '编辑器设置' : 'Editor settings'} aria-expanded={open} aria-controls={open ? 'editor-settings-panel' : undefined} onClick={() => setOpen(!open)}><Settings size={18} aria-hidden="true" /></button>
+    <HelpTooltip side="bottom" label={zh ? '编辑器设置' : 'Editor settings'}><button ref={buttonRef} className="header-control" type="button" aria-label={zh ? '编辑器设置' : 'Editor settings'} aria-expanded={open} aria-controls={open ? 'editor-settings-panel' : undefined} onClick={() => setOpen(!open)}><Settings size={18} aria-hidden="true" /></button></HelpTooltip>
     {open && <section id="editor-settings-panel" className="settings-panel" aria-label={zh ? '编辑器设置' : 'Editor settings'}>
       <strong>{zh ? '编辑器设置' : 'Editor settings'}</strong>
       <fieldset className="indent-options"><legend>{zh ? '格式化缩进' : 'Formatting indentation'}</legend>

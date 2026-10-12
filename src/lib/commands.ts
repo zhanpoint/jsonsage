@@ -1,7 +1,9 @@
-import { AlignLeft, Wrench, ShieldCheck, Minimize2, ShieldEllipsis, Search, Columns2, FolderOpen, Link2, ClipboardCheck, Download, Undo2, Redo2, TextQuote, Quote, Code2, ListTree, Table2, Workflow, ListFilter, GitCompareArrows, Terminal, FileCode2, MonitorDown, Command, Keyboard, Copy } from 'lucide-react';
+import { AlignLeft, Wrench, ShieldCheck, Minimize2, ShieldEllipsis, Search, Columns2, FolderOpen, Link2, ClipboardCheck, Download, Undo2, Redo2, TextQuote, Quote, Code2, ListTree, Table2, Workflow, ListFilter, GitCompareArrows, Terminal, FileCode2, MonitorDown, Command, Keyboard, Copy, History, BookmarkPlus } from 'lucide-react';
 
 export const commandDefinitions = {
   palette: { icon: Command, tone: 'violet', shortcut: 'Mod+K' },
+  history: { icon: History, tone: 'amber', shortcut: 'Mod+Alt+H' },
+  saveHistory: { icon: BookmarkPlus, tone: 'green', shortcut: 'Mod+Alt+S' },
   shortcuts: { icon: Keyboard, tone: 'slate', shortcut: 'Mod+Alt+K' },
   format: { icon: AlignLeft, tone: 'blue', shortcut: 'Mod+Enter' },
   repair: { icon: Wrench, tone: 'amber', shortcut: 'Mod+Alt+R' },

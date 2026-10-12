@@ -10,7 +10,7 @@ export function editorTheme(dark: boolean) {
   return [EditorView.theme({
     '&': { height: '420px', backgroundColor: 'var(--p-editor, var(--tip-bg))', color: 'var(--tip-fg)', fontSize: '13px' },
     '&.cm-focused': { outline: 'none' },
-    '.cm-scroller': { overflow: 'auto', fontFamily: '"Cascadia Code", "SFMono-Regular", Consolas, monospace', lineHeight: '24px', scrollbarWidth: 'thin', scrollbarColor: 'var(--tip-border) transparent' },
+    '.cm-scroller': { overflow: 'auto', fontFamily: '"Cascadia Code", "SFMono-Regular", Consolas, monospace', lineHeight: '24px', scrollbarWidth: 'thin', scrollbarColor: 'var(--scroll-thumb) transparent' },
     '.cm-content': { padding: '18px 0', caretColor: accent },
     '.cm-line': { padding: '0 12px 0 20px' },
     '.cm-gutters': { backgroundColor: 'var(--p-editor, var(--tip-bg))', color: subtle, border: 'none', userSelect: 'none' },

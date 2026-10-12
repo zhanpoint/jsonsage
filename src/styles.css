@@ -29,23 +29,8 @@ textarea:focus-visible { outline: 3px solid #a7c2ff; outline-offset: 2px; }
 .language-trigger[aria-expanded="true"],
 .palette-trigger[aria-expanded="true"] { background: #f3f6fc; color: #4058ae; }
 .header-control:active { transform: scale(.96); }
-/* Small bordered tooltips,
-adapted to the existing controls from 21st's tooltip pattern. */
-[data-tooltip] { position: relative; }
-[data-tooltip]::after { position: absolute; z-index: 30; bottom: calc(100% + 9px); left: 50%; width: max-content; max-width: min(240px, calc(100vw - 24px)); padding: 7px 10px; border: 1px solid var(--tip-border); border-radius: 7px; background: var(--tip-bg); box-shadow: var(--tip-shadow); color: var(--tip-fg); content: attr(data-tooltip); font-size: 11px; font-weight: 500; line-height: 1.35; text-align: center; white-space: normal; pointer-events: none; opacity: 0; transform: translate(-50%, 3px); transition: opacity .15s ease, transform .15s ease; display: none; }
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::after,
-.mode-switch:focus-within::after { opacity: 1; transform: translate(-50%, 0); display: block; }
-.topbar [data-tooltip]::after { top: calc(100% + 9px); bottom: auto; transform: translate(-50%, -3px); }
-.topbar [data-tooltip]:hover::after,
-.topbar [data-tooltip]:focus-visible::after { transform: translate(-50%, 0); }
-.topbar .palette-trigger::after,
-.toolbar-actions .tool-button:last-child::after { right: 0; left: auto; transform: translate(0, 3px); }
-.topbar .palette-trigger::after { transform: translate(0, -3px); }
-.topbar .palette-trigger:hover::after,
-.topbar .palette-trigger:focus-visible::after,
-.toolbar-actions .tool-button:last-child:hover::after,
-.toolbar-actions .tool-button:last-child:focus-visible::after { transform: translate(0, 0); }
+.tooltip-positioner { z-index: 180; }
+.help-tooltip { max-width: min(260px, var(--available-width)); padding: 7px 10px; border: 1px solid var(--tip-border); border-radius: 7px; background: var(--tip-bg); box-shadow: var(--tip-shadow); color: var(--tip-fg); font-size: 11px; font-weight: 500; line-height: 1.4; text-align: center; overflow-wrap: anywhere; pointer-events: none; }
 .theme-toggle,
 .palette-trigger { position: relative; width: 36px; }
 .theme-toggle svg { position: absolute; transition: opacity .22s ease, transform .25s ease; }
@@ -139,7 +124,7 @@ button.issue-row:hover { background: #6677df0a; }
 
 }
 
-@media (prefers-reduced-motion: reduce) {[data-tooltip]::after,
+@media (prefers-reduced-motion: reduce) {.help-tooltip,
 .switch-track,
 .switch-track::after { transition: none; }
 
@@ -175,21 +160,16 @@ kbd { min-width: 16px; padding: 1px 4px; border: 1px solid #e3e6ec; border-radiu
 .privacy-lock { color: #7d8ad6; }
 .page-footer a { color: #6875aa; text-decoration: none; text-underline-offset: 3px; transition: color .16s ease; }
 .page-footer a:hover { color: #4058dc; text-decoration: underline; }
-/* Slim native scrollbars keep dragging,
-wheel and keyboard scrolling intact. */
-html,
-.issues-list { scrollbar-width: thin; scrollbar-color: #aab6c6 transparent; }
-html::-webkit-scrollbar,
-.issues-list::-webkit-scrollbar { width: 5px; height: 5px; }
-html::-webkit-scrollbar-track,
-.issues-list::-webkit-scrollbar-track { background: transparent; }
-html::-webkit-scrollbar-thumb,
-.issues-list::-webkit-scrollbar-thumb { border-radius: 999px; background: #aab6c6; }
-html::-webkit-scrollbar-thumb:hover,
-.issues-list::-webkit-scrollbar-thumb:hover { background: #8797ab; }
-html::-webkit-scrollbar-button,
-.issues-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-html::-webkit-scrollbar-corner { background: transparent; }
+:root { --scroll-thumb: #aab6c6; --scroll-thumb-hover: #8797ab; color-scheme: light; }
+:root:has(.app-shell[data-theme="dark"]) { --scroll-thumb: #65758e; --scroll-thumb-hover: #8c9bb1; color-scheme: dark; }
+.app-shell { --scroll-thumb: color-mix(in srgb, var(--tip-fg) 30%, var(--tip-bg)); --scroll-thumb-hover: color-mix(in srgb, var(--tip-fg) 50%, var(--tip-bg)); }
+html, .app-shell, .app-shell * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+html::-webkit-scrollbar, .app-shell *::-webkit-scrollbar { width: 6px; height: 6px; }
+html::-webkit-scrollbar-track, .app-shell *::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb, .app-shell *::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--scroll-thumb); }
+html::-webkit-scrollbar-thumb:hover, .app-shell *::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+html::-webkit-scrollbar-button, .app-shell *::-webkit-scrollbar-button { display: none; }
+html::-webkit-scrollbar-corner, .app-shell *::-webkit-scrollbar-corner { background: transparent; }
 
 @media (max-width: 650px) {.app-shell { --page-gutter: 12px; }
 .topbar { height: 56px; }
@@ -253,9 +233,6 @@ html::-webkit-scrollbar-corner { background: transparent; }
 .app-shell[data-theme="dark"] .page-footer { color: #9ba9bd; }
 .app-shell[data-theme="dark"] .page-footer a { color: #aebdf9; }
 .app-shell[data-theme="dark"] .page-footer a:hover { color: #d6dfff; }
-.app-shell[data-theme="dark"] .issues-list { scrollbar-color: #65758e transparent; }
-.app-shell[data-theme="dark"] .issues-list::-webkit-scrollbar-thumb { background: #65758e; }
-.app-shell[data-theme="dark"] .issues-list::-webkit-scrollbar-thumb:hover { background: #8c9bb1; }
 .app-shell[data-theme="dark"] .issue-code.error { background: #442d34; }
 .app-shell[data-theme="dark"] .issue-code.warning { background: #443a27; }
 

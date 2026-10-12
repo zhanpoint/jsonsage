@@ -7,7 +7,7 @@
 .view-message { min-height: 360px; display: flex; align-items: center; justify-content: center; padding: 32px; color: var(--tip-fg); font-size: 13px; }
 .view-caption { padding: 9px 16px; color: var(--tip-fg); font-size: 11px; line-height: 1.6; border-bottom: 1px solid var(--tip-border); }
 .view-caption span { opacity: .75; }
-.tree-scroll, .table-scroll { height: 420px; overflow: auto; color: var(--tip-fg); background: var(--tip-bg); scrollbar-color: var(--tip-border) transparent; }
+.tree-scroll, .table-scroll { height: 420px; overflow: auto; color: var(--tip-fg); background: var(--tip-bg); }
 .tree-row { display: flex; align-items: center; gap: 8px; font: 12px/1.4 Consolas, monospace; }
 .tree-guides { position: absolute; left: 22px; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(to right, var(--tip-border) 0 1px, transparent 1px 18px); opacity: .55; }
 .node-container-icon { flex: none; color: var(--p-interactive, #8599e6); }
@@ -22,8 +22,6 @@
 .node-value { opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .node-actions { display: flex; margin-left: auto; padding-right: 10px; flex: none; }
 .node-actions .tool-button { height: 26px; width: 26px; color: var(--tip-fg); }
-.node-actions [data-tooltip]::after { left: auto; right: 0; transform: translateY(3px); }
-.node-actions [data-tooltip]:hover::after, .node-actions [data-tooltip]:focus-visible::after { transform: translateY(0); }
 .node-dialog { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(500px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; margin: 0; border: 1px solid var(--tip-border); border-radius: 12px; padding: 20px; background: var(--tip-bg); color: var(--tip-fg); box-shadow: var(--tip-shadow); z-index: 100; }
 .node-dialog::backdrop { background: #0006; }
 .node-dialog-title { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }

@@ -5,6 +5,7 @@ import { findNodeAtLocation, type Node } from 'jsonc-parser';
 import { childPath, editNode, findObjectArrays, flattenTree, isContainer, pathText, rawSummary, tableHeaders, type JsonPath, type ViewRow } from '../lib/json/views';
 import type { Indent } from '../lib/json/transforms';
 import type { JsonOptions } from '../lib/json/engine';
+import { HelpTooltip } from './ui/HelpTooltip';
 const GraphView = lazy(() => import('./GraphView'));
 export type StructuredProps = {
   root: Node; source: string; view: 'tree' | 'table' | 'graph'; language: 'zh' | 'en';
@@ -92,9 +93,9 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
             <span className={`node-type type-${row.node.type}`}>{types[row.node.type]}</span>
             <span className={`node-value${container ? ' node-count' : ''}`}>{container ? `${row.node.children?.length ?? 0} ${zh ? (row.node.type === 'object' ? '个字段' : '项') : (row.node.type === 'object' ? 'fields' : 'items')}` : rawSummary(source, row.node)}</span>
             <div className="node-actions">
-              <button data-tone="blue" disabled={!editable} className="tool-button" aria-label={zh ? '编辑节点' : 'Edit node'} data-tooltip={zh ? '编辑节点' : 'Edit node'} onClick={() => open(row, 'replace')}><Pencil size={13} /></button>
-              {container && <button data-tone="green" disabled={!editable} className="tool-button" aria-label={zh ? '添加子节点' : 'Add child'} data-tooltip={zh ? '添加子节点' : 'Add child'} onClick={() => open(row, 'add')}><Plus size={14} /></button>}
-              {row.depth > 0 && <button data-tone="red" disabled={!editable} className="tool-button" aria-label={zh ? '删除节点' : 'Delete node'} data-tooltip={zh ? '删除节点' : 'Delete node'} onClick={() => open(row, 'delete')}><Trash2 size={13} /></button>}
+              <HelpTooltip label={zh ? '编辑节点' : 'Edit node'}><button data-tone="blue" disabled={!editable} className="tool-button" aria-label={zh ? '编辑节点' : 'Edit node'} onClick={() => open(row, 'replace')}><Pencil size={13} /></button></HelpTooltip>
+              {container && <HelpTooltip label={zh ? '添加子节点' : 'Add child'}><button data-tone="green" disabled={!editable} className="tool-button" aria-label={zh ? '添加子节点' : 'Add child'} onClick={() => open(row, 'add')}><Plus size={14} /></button></HelpTooltip>}
+              {row.depth > 0 && <HelpTooltip label={zh ? '删除节点' : 'Delete node'}><button data-tone="red" disabled={!editable} className="tool-button" aria-label={zh ? '删除节点' : 'Delete node'} onClick={() => open(row, 'delete')}><Trash2 size={13} /></button></HelpTooltip>}
             </div>
           </div>;
         })}

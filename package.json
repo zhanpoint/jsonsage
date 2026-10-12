@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "check:unused": "knip --no-progress",
     "benchmark": "node --expose-gc --import tsx scripts/benchmark.ts",
-    "test": "tsx tests/engine.test.ts && tsx tests/repair.test.ts && tsx tests/transforms.test.ts && tsx tests/views.test.ts && tsx tests/codeEditor.test.ts && tsx tests/analysis.test.ts && tsx tests/features.test.ts && tsx tests/shortcuts.test.ts && tsx tests/importDocument.test.ts"
+    "test": "tsx tests/engine.test.ts && tsx tests/repair.test.ts && tsx tests/transforms.test.ts && tsx tests/views.test.ts && tsx tests/codeEditor.test.ts && tsx tests/analysis.test.ts && tsx tests/features.test.ts && tsx tests/shortcuts.test.ts && tsx tests/importDocument.test.ts && tsx tests/history.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -26,6 +26,7 @@
     "@tanstack/react-virtual": "^3.14.13",
     "@xyflow/react": "^12.12.0",
     "cmdk": "^1.1.1",
+    "idb": "^8.0.4",
     "jq-web": "^0.6.2",
     "jsonc-parser": "^3.3.1",
     "jsonpath-plus": "^11.1.1",
@@ -42,6 +43,7 @@
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.2.0",
+    "fake-indexeddb": "^6.2.5",
     "knip": "^6.39.0",
     "tsx": "^4.20.5",
     "typescript": "~5.9.2",

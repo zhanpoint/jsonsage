@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, CircleAlert, Copy, Code2, FileJson2, Globe2, Moon, Palette, Sun, Command, MonitorDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Check, ChevronDown, CircleAlert, Copy, Code2, FileJson2, Globe2, Moon, Palette, Sun, Command, MonitorDown, History } from 'lucide-react';
 import { lineColumn as position, type JsonDiagnostic } from './lib/json/engine';
 import { type Indent } from './lib/json/transforms';
 import { useJsonTransform } from './hooks/useJsonTransform';
@@ -25,6 +26,8 @@ import { useShortcuts, useCommandKeyboard } from './hooks/useShortcuts';
 import { CommandButton } from './components/ui/CommandButton';
 import { activeEditor } from './lib/codeEditor';
 const ShortcutSettings = lazy(() => import('./components/ShortcutSettings'));
+const HistoryDialog = lazy(() => import('./components/HistoryDialog'));
+import { HelpTooltip } from './components/ui/HelpTooltip';
 
 type Language = 'en' | 'zh';
 type Theme = 'light' | 'dark';
@@ -200,6 +203,7 @@ export default function App() {
   const [split, setSplit] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState<'list' | 'create' | null>(null);
   const shortcuts = useShortcuts();
   const fileInput = useRef<HTMLInputElement>(null);
   const install = useInstall();
@@ -361,8 +365,15 @@ export default function App() {
     return { id, label, run, disabled, icon, tone, binding: shortcuts.bindings[id], nativeEditing: id === 'undo' || id === 'redo' };
   };
   const invalidOrBusy = !parsed.ok && !parsed.pending || transform.busy;
+  function openHistory(create = false) {
+    inputRef.current?.flush();
+    setCommandOpen(false);
+    setHistoryOpen(create ? 'create' : 'list');
+  }
   const commands = [
     command('palette', language === 'zh' ? '命令面板' : 'Command palette', () => setCommandOpen(previous => !previous)),
+    command('history', language === 'zh' ? '历史记录' : 'History', () => openHistory()),
+    command('saveHistory', language === 'zh' ? '保存到历史记录' : 'Save to history', () => openHistory(true)),
     command('format', t.format, () => activeEditor(inputRef.current)?.format(), view === 'diff' ? transform.busy : invalidOrBusy),
     command('repair', t.autoFix, autoFix, transform.busy),
     command('validate', t.validate, validateSource, parsed.pending),
@@ -385,26 +396,29 @@ export default function App() {
   ];
   const commandsById = Object.fromEntries(commands.map(item => [item.id, item])) as Record<CommandId, PaletteCommand>;
   useCommandKeyboard(commands.map(item => ({ ...item, run: () => { if (item.id !== 'palette') setCommandOpen(false); item.run(); } })), () => activeEditor(inputRef.current)?.flush());
+  const notification = notice && <div className={`action-notice ${notice.error ? 'notice-error' : ''}`} role="status">{notice.text}</div>;
+  const historyDialog = historyOpen ? document.querySelector('.history-dialog[open]') : null;
 
   return (
     <div className="app-shell" data-theme={theme} data-palette={palette}>
       <header className="topbar">
-        <a className="brand" href="#" aria-label="JsonSage home">
+        <a className="brand" href="#workspace" aria-label="JsonSage home">
           <span className="brand-mark"><img src="/jsonsage-mark.svg" alt="" /></span>
           <span>jsonsage</span>
         </a>
         <div className="topbar-right">
-          <button className="header-control command-trigger" data-tone="violet" onClick={() => setCommandOpen(true)} aria-label={language === 'zh' ? '命令面板' : 'Command palette'} data-tooltip={`${language === 'zh' ? '命令面板' : 'Command palette'} · ${shortcutLabel(shortcuts.bindings.palette)}`}><Command size={16} /><span>{language === 'zh' ? '命令' : 'Commands'}</span></button>
-          {install.available && <button className="header-control" onClick={() => void install.install()} aria-label={language === 'zh' ? '安装离线应用' : 'Install offline app'} data-tooltip={language === 'zh' ? '安装离线应用' : 'Install offline app'}><MonitorDown size={16} /></button>}
+          <HelpTooltip side="bottom" label={`${commandsById.history.label} · ${shortcutLabel(shortcuts.bindings.history)}`}><button className="header-control command-trigger history-trigger" data-tone="amber" onClick={() => openHistory()} aria-label={commandsById.history.label}><History size={16} /><span>{commandsById.history.label}</span></button></HelpTooltip>
+          <HelpTooltip side="bottom" label={`${commandsById.palette.label} · ${shortcutLabel(shortcuts.bindings.palette)}`}><button className="header-control command-trigger" data-tone="violet" onClick={() => setCommandOpen(true)} aria-label={commandsById.palette.label}><Command size={16} /><span>{language === 'zh' ? '命令' : 'Commands'}</span></button></HelpTooltip>
+          {install.available && <HelpTooltip side="bottom" label={commandsById.install.label}><button className="header-control" onClick={() => void install.install()} aria-label={commandsById.install.label}><MonitorDown size={16} /></button></HelpTooltip>}
           <EditorSettings language={language} indent={indent} onIndentChange={setIndent} onShortcuts={() => setShortcutsOpen(true)} />
           <div className="language-picker" ref={languagePickerRef}>
+            <HelpTooltip side="bottom" label={t.language}>
             <button
               ref={languageButtonRef}
               type="button"
               className="header-control language-trigger"
               data-tone="cyan"
               aria-label={t.language}
-              data-tooltip={t.language}
               aria-expanded={languageOpen}
               aria-controls={languageOpen ? 'language-options' : undefined}
               onClick={() => { setPaletteOpen(false); setLanguageOpen((open) => !open); }}
@@ -413,6 +427,7 @@ export default function App() {
               <span>{language === 'zh' ? '中文' : 'EN'}</span>
               <ChevronDown size={14} className="language-chevron" aria-hidden="true" />
             </button>
+            </HelpTooltip>
             {languageOpen && <div id="language-options" className="language-options">
               {(['zh', 'en'] as const).map((option) => <button
                 key={option}
@@ -426,31 +441,31 @@ export default function App() {
               </button>)}
             </div>}
           </div>
-          <button
+          <HelpTooltip side="bottom" label={theme === 'light' ? t.theme : t.lightTheme}><button
             type="button"
             className="header-control theme-toggle"
             data-tone={theme === 'light' ? 'blue' : 'amber'}
-            data-tooltip={theme === 'light' ? t.theme : t.lightTheme}
             aria-label={theme === 'light' ? t.theme : t.lightTheme}
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           >
             <Moon size={18} className="theme-moon" aria-hidden="true" />
             <Sun size={18} className="theme-sun" aria-hidden="true" />
-          </button>
+          </button></HelpTooltip>
           <div className="palette-picker" ref={palettePickerRef}>
+            <HelpTooltip side="bottom" label={t.palette}>
             <button
               ref={paletteButtonRef}
               type="button"
               className="header-control palette-trigger"
               data-tone="violet"
               aria-label={t.palette}
-              data-tooltip={t.palette}
               aria-expanded={paletteOpen}
               aria-controls={paletteOpen ? 'palette-options' : undefined}
               onClick={() => { setLanguageOpen(false); setPaletteOpen((open) => !open); }}
             >
               <Palette size={18} aria-hidden="true" />
             </button>
+            </HelpTooltip>
             {paletteOpen && <div id="palette-options" className="palette-options">
               <span className="palette-heading">{t.palette}</span>
               {palettes.map((item) => <button
@@ -471,7 +486,8 @@ export default function App() {
 
       {pathMenu && <PathMenu target={pathMenu} language={language} onClose={() => setPathMenu(null)} onCopy={async path => { try { await navigator.clipboard.writeText(path); setNotice('copied'); } catch { setNotice('copyFailed'); } }} />}
       {remoteOpen && <Suspense fallback={null}><RemoteImport language={language} onClose={() => setRemoteOpen(false)} onLoad={text => { updateSource(text.replace(/\r\n?/g, '\n')); setView('code'); }} /></Suspense>}
-      <main className="workspace">
+      {historyOpen && <Suspense fallback={null}><HistoryDialog language={language} theme={theme} indent={indent} current={{ source, fileName, jsonc }} create={historyOpen === 'create'} notify={notify} onClose={() => setHistoryOpen(null)} onLoad={record => { updateSource(record.source); setFileName(record.fileName); setJsonc(record.jsonc); setView('code'); notify(language === 'zh' ? '已载入历史记录。' : 'History loaded.'); }} /></Suspense>}
+      <main id="workspace" className="workspace">
         <section className={`editor-card${dragging ? ' is-dragging' : ''}`} aria-label={t.editor}
           onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest('.cm-editor')) activeEditor(inputRef.current)?.flush(); }}
           onDragOver={event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); setDragging(true); } }}
@@ -481,11 +497,11 @@ export default function App() {
           <div className="editor-toolbar">
             <div className="file-label"><FileJson2 size={16} aria-hidden="true" /><input className="file-name" aria-label={t.file} value={fileName} onChange={(event) => setFileName(event.target.value)} spellCheck={false} /></div>
             <div className="toolbar-actions">
-              <label className="mode-switch" data-tooltip={t.mode}>
+              <HelpTooltip label={t.mode}><label className="mode-switch">
                 <input type="checkbox" checked={jsonc} onChange={(event) => { setJsonc(event.target.checked); setNotice(null); }} aria-label="JSONC" />
                 <span className="switch-track" aria-hidden="true" />
                 <span className="mode-label">JSONC</span>
-              </label>
+              </label></HelpTooltip>
               <span className="toolbar-separator" />
               {(['validate', 'repair', 'mask', 'format', 'minify', 'escape', 'unescape'] as const).map(id => <CommandButton key={id} command={commandsById[id]} />)}
               <span className="toolbar-separator" />
@@ -518,7 +534,7 @@ export default function App() {
           </div>
         </section>
 
-        {notice && <div className={`action-notice ${notice.error ? 'notice-error' : ''}`} role="status">{notice.text}</div>}
+        {notification && historyDialog ? createPortal(notification, historyDialog) : notification}
         {commandOpen && <Suspense fallback={null}><CommandPalette language={language} commands={commands.filter(item => item.id !== 'palette')} onClose={() => setCommandOpen(false)} /></Suspense>}
         {shortcutsOpen && <Suspense fallback={null}><ShortcutSettings language={language} commands={commands} bindings={shortcuts.bindings} onChange={shortcuts.setBindings} onClose={() => setShortcutsOpen(false)} /></Suspense>}
         <section className="details-card">

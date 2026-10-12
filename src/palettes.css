@@ -74,4 +74,3 @@
 .app-shell[data-palette]:not([data-palette="default"]) .issue-location { color: var(--p-faint); }
 .app-shell[data-palette]:not([data-palette="default"]) .toolbar-separator,
 .app-shell[data-palette]:not([data-palette="default"]) .details-footer i { background: var(--p-border); }
-.app-shell[data-palette]:not([data-palette="default"]) .issues-list { scrollbar-color: var(--p-border) transparent; }
