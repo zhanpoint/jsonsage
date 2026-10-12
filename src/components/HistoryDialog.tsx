@@ -1,25 +1,32 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookmarkPlus, FileJson2, History, Pencil, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileJson2, History, Pencil, RefreshCw, Search, Trash2, X } from 'lucide-react';
 import { HistoryConflict, historyStore, type HistoryCursor, type HistoryEntry, type SavedDocument } from '../lib/history';
 import type { EditorHandle } from './CodeEditor';
 import type { Indent } from '../lib/json/transforms';
+import { useCommandKeyboard } from '../hooks/useShortcuts';
+import { commandDefinitions } from '../lib/commands';
+import { shortcutLabel, type ShortcutMap } from '../lib/shortcuts';
+import { HelpTooltip } from './ui/HelpTooltip';
+import type { PaletteCommand } from './CommandPalette';
 import './history.css';
 const CodeEditor = lazy(() => import('./CodeEditor'));
 type Draft = SavedDocument & { title: string; entry?: HistoryEntry };
-const newDraft = (current: SavedDocument): Draft => ({ ...current, title: current.fileName.replace(/\.[^.]+$/, '') || 'JSON' });
+const newDraft = (current: SavedDocument = { source: '{}', fileName: 'untitled.json', jsonc: false }): Draft => ({ ...current, title: current.fileName.replace(/\.[^.]+$/, '') || 'JSON' });
 const changed = (value: Draft | null, original: Draft | null) => !!value && (!value.entry || value.title !== original?.title || value.fileName !== original?.fileName || value.source !== original?.source || value.jsonc !== original?.jsonc);
 
-export default function HistoryDialog({ language, theme, indent, current, create, onLoad, onClose, notify }: {
-  language: 'zh' | 'en'; theme: 'light' | 'dark'; indent: Indent; current: SavedDocument; create: boolean;
+export default function HistoryDialog({ language, theme, indent, current, mode, bindings, onLoad, onClose, notify }: {
+  language: 'zh' | 'en'; theme: 'light' | 'dark'; indent: Indent; current: SavedDocument; mode: 'list' | 'save' | 'new'; bindings: Pick<ShortcutMap, 'newHistory' | 'saveHistory'>;
   onLoad: (document: SavedDocument) => void; onClose: () => void; notify: (message: string, error?: boolean) => void;
 }) {
   const zh = language === 'zh';
+  const create = mode !== 'list';
   const text = (chinese: string, english: string) => zh ? chinese : english;
   const dialog = useRef<HTMLDialogElement>(null), editor = useRef<EditorHandle | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(() => create ? newDraft(current) : null);
+  const [draft, setDraft] = useState<Draft | null>(() => create ? newDraft(mode === 'new' ? undefined : current) : null);
   const latest = useRef(draft); latest.current = draft;
   const original = useRef<Draft | null>(draft);
   const [editing, setEditing] = useState(create);
+  const [editorPending, setEditorPending] = useState(false);
   const [busy, setBusy] = useState(false), [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [search, setSearch] = useState(''), [query, setQuery] = useState('');
@@ -79,7 +86,7 @@ export default function HistoryDialog({ language, theme, indent, current, create
     finally { if (mounted.current && sequence === readSequence.current) setBusy(false); }
   }
   function start() {
-    const value = newDraft(current);
+    const value = newDraft();
     original.current = value; latest.current = value; setDraft(value); setEditing(true); setDeleting(false); setError('');
   }
   async function save() {
@@ -108,12 +115,24 @@ export default function HistoryDialog({ language, theme, indent, current, create
     } catch (cause) { if (mounted.current) report(cause); }
     finally { if (mounted.current) setBusy(false); }
   }
+  function revert() {
+    editor.current?.flush();
+    requestAnimationFrame(() => {
+      if (!mounted.current) return;
+      latest.current = original.current; setDraft(original.current); setEditing(!original.current?.entry);
+    });
+  }
   const close = () => { if (!busy) navigate(onClose); };
+  const blocked = busy || deleting || !!pendingAction;
+  const historyCommands: PaletteCommand[] = [
+    { id: 'newHistory', label: text('新建记录', 'New record'), icon: commandDefinitions.newHistory.icon, tone: commandDefinitions.newHistory.tone, binding: bindings.newHistory, disabled: blocked, run: () => navigate(start) },
+    { id: 'saveHistory', label: text('保存记录', 'Save record'), icon: commandDefinitions.saveHistory.icon, tone: commandDefinitions.saveHistory.tone, binding: bindings.saveHistory, disabled: blocked || !draft || !draft.title.trim() || !draft.fileName.trim() || !dirty && !editorPending, run: () => { void save(); } },
+  ];
+  useCommandKeyboard(historyCommands, () => editor.current?.flush(), dialog);
   return <dialog ref={dialog} className="history-dialog" aria-labelledby="history-title" onCancel={event => { event.preventDefault(); close(); }}>
-    <header className="history-header"><div><History size={19} /><strong id="history-title">{text('历史记录', 'History')}</strong><span>{text('仅保存在此浏览器', 'Saved only in this browser')}</span></div><button type="button" className="tool-button" aria-label={text('关闭', 'Close')} onClick={close} disabled={busy}><X size={18} /></button></header>
+    <header className="history-header"><div className="history-header-title"><History size={19} /><strong id="history-title">{text('历史记录', 'History')}</strong><span>{text('仅保存在此浏览器', 'Saved only in this browser')}</span></div><div className="history-header-actions">{historyCommands.map(command => <HelpTooltip key={command.id} side="bottom" label={`${command.label} · ${shortcutLabel(command.binding)}`}><button type="button" className="history-button" data-tone={command.tone} disabled={command.disabled} onClick={command.run}><command.icon size={15} />{command.label}</button></HelpTooltip>)}<button type="button" className="tool-button" aria-label={text('关闭', 'Close')} onClick={close} disabled={busy}><X size={18} /></button></div></header>
     <div className="history-body">
       <aside className="history-sidebar">
-        <button type="button" className="history-button history-primary" disabled={busy} onClick={() => navigate(start)}><BookmarkPlus size={16} />{text('保存当前内容', 'Save current JSON')}</button>
         <div className="history-search"><Search size={15} /><input type="search" aria-label={text('搜索标题或文件名', 'Search title or filename')} placeholder={text('搜索标题或文件名', 'Search title or filename')} value={search} onChange={event => setSearch(event.target.value)} autoFocus={!create} /><button type="button" className="tool-button" aria-label={text('刷新列表', 'Refresh list')} disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={14} /></button></div>
         <div className="history-list" aria-busy={loading}>
           {loading ? <p className="history-empty" role="status">{text('正在读取…', 'Loading…')}</p> : entries.length ? entries.map(entry => <button type="button" className="history-entry" key={entry.id} aria-pressed={draft?.entry?.id === entry.id} disabled={busy} onClick={() => navigate(() => { void select(entry); })}>
@@ -126,10 +145,10 @@ export default function HistoryDialog({ language, theme, indent, current, create
         {draft ? <>
           <div className="history-fields"><label>{text('标题', 'Title')}<input value={draft.title} maxLength={160} disabled={busy} onChange={event => change({ title: event.target.value })} autoFocus={create} /></label><label>{text('文件名', 'Filename')}<input value={draft.fileName} maxLength={255} disabled={busy} onChange={event => change({ fileName: event.target.value })} spellCheck={false} /></label></div>
           <div className="history-editor-heading"><span>{editing ? text('编辑内容', 'Edit content') : text('内容预览', 'Preview')} · {draft.jsonc ? 'JSONC' : 'JSON'}</span><button type="button" className="history-button" disabled={busy || editing} onClick={() => setEditing(true)}><Pencil size={14} />{text('编辑内容', 'Edit content')}</button></div>
-          <div className="history-editor"><Suspense fallback={<p className="history-empty">{text('正在加载编辑器…', 'Loading editor…')}</p>}><CodeEditor source={draft.source} onChange={source => change({ source })} readOnly={!editing || busy} managedFormat onFormat={() => {}} onContextPath={() => {}} onHistory={() => {}} editorRef={editor} diagnostics={[]} language={language} theme={theme} indent={indent} label={text('历史记录内容', 'History content')} /></Suspense></div>
+          <div className="history-editor"><Suspense fallback={<p className="history-empty">{text('正在加载编辑器…', 'Loading editor…')}</p>}><CodeEditor source={draft.source} onChange={source => change({ source })} onPendingChange={setEditorPending} readOnly={!editing || busy} managedFormat onFormat={() => {}} onContextPath={() => {}} onHistory={() => {}} editorRef={editor} diagnostics={[]} language={language} theme={theme} indent={indent} label={text('历史记录内容', 'History content')} /></Suspense></div>
           {deleting ? <div className="history-confirm" role="alert"><span>{text('删除此记录？此操作不可撤销。', 'Delete this record? This cannot be undone.')}</span><button type="button" className="history-button" disabled={busy} onClick={() => setDeleting(false)}>{text('取消', 'Cancel')}</button><button type="button" className="history-button history-danger" disabled={busy} onClick={() => { void remove(); }}>{text('确认删除', 'Delete')}</button></div>
-            : <div className="history-actions"><button type="button" className="history-button history-danger" disabled={busy || !draft.entry} onClick={() => setDeleting(true)}><Trash2 size={15} />{text('删除', 'Delete')}</button><span /><button type="button" className="history-button" disabled={busy || !dirty} onClick={() => { latest.current = original.current; setDraft(original.current); setEditing(!original.current?.entry); }}>{text('还原', 'Revert')}</button><button type="button" className="history-button" disabled={busy || !draft.title.trim() || !draft.fileName.trim() || !dirty} onClick={() => { void save(); }}>{busy ? text('处理中…', 'Working…') : text('保存', 'Save')}</button><button type="button" className="history-button history-primary" disabled={busy} onClick={() => { editor.current?.flush(); if (latest.current) { onLoad(latest.current); onClose(); } }}>{text('载入编辑器', 'Load into editor')}</button></div>}
-        </> : <div className="history-welcome"><History size={32} /><strong>{text('保存常用 JSON，随时找回', 'Keep useful JSON within reach')}</strong><span>{text('选择一条记录，或保存当前编辑器内容', 'Select a record or save the current editor content')}</span></div>}
+            : <div className="history-actions"><button type="button" className="history-button history-danger" disabled={busy || !draft.entry} onClick={() => setDeleting(true)}><Trash2 size={15} />{text('删除', 'Delete')}</button><span /><button type="button" className="history-button" disabled={busy || !dirty && !editorPending} onClick={revert}>{text('还原', 'Revert')}</button><button type="button" className="history-button history-primary" disabled={busy} onClick={() => { editor.current?.flush(); if (latest.current) { onLoad(latest.current); onClose(); } }}>{text('载入编辑器', 'Load into editor')}</button></div>}
+        </> : <div className="history-welcome"><History size={32} /><strong>{text('保存常用 JSON，随时找回', 'Keep useful JSON within reach')}</strong><span>{text('选择一条记录，或点击上方新建记录', 'Select a record or create one above')}</span></div>}
       </section>
     </div>
     {pendingAction && <div className="history-confirm" role="alert"><span>{text('当前修改尚未保存，是否放弃？', 'Discard unsaved changes?')}</span><button type="button" className="history-button" onClick={() => setPendingAction(null)}>{text('继续编辑', 'Keep editing')}</button><button type="button" className="history-button history-danger" onClick={() => { const action = pendingAction; setPendingAction(null); action(); }}>{text('放弃修改', 'Discard')}</button></div>}

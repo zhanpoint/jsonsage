@@ -4,6 +4,8 @@ import { readShortcuts, shortcutConflict, shortcutFromEvent, shortcutLabel } fro
 
 const key = (code: string, modifiers: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }> = {}, value = code.replace(/^(Key|Digit)/, '')) => ({ code, key: value, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...modifiers });
 assert.equal(new Set(Object.values(defaultShortcuts)).size, Object.keys(commandDefinitions).length);
+assert.equal(shortcutFromEvent(key('KeyN', { ctrlKey: true, altKey: true })), defaultShortcuts.newHistory);
+assert.equal(shortcutFromEvent(key('KeyS', { ctrlKey: true, altKey: true })), defaultShortcuts.saveHistory);
 assert.equal(shortcutFromEvent(key('KeyK', { ctrlKey: true })), defaultShortcuts.palette);
 assert.equal(shortcutFromEvent(key('KeyK', { metaKey: true })), defaultShortcuts.palette);
 assert.equal(shortcutFromEvent(key('Digit2', { ctrlKey: true, altKey: true })), defaultShortcuts.tree);

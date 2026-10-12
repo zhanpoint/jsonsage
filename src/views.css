@@ -125,7 +125,7 @@
 .command-dialog footer span:last-child { margin-left: auto; }
 .output-toolbar > span { margin-right: auto; font-size: 12px; opacity: .6; }
 .large-tree .table-controls code { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 760px) { .linked-editors { grid-template-columns: minmax(0, 1fr); }.linked-editors > .data-view { border-left: 0; border-top: 1px solid var(--tip-border); }.linked-editors .cm-editor, .linked-editors .tree-scroll { height: 300px; }.current-path { max-width: 100%; flex: 1; }.command-trigger span { display: none; } }
+@media (max-width: 760px) { .linked-editors { grid-template-columns: minmax(0, 1fr); }.linked-editors > .data-view { border-left: 0; border-top: 1px solid var(--tip-border); }.linked-editors .cm-editor, .linked-editors .tree-scroll { height: 300px; }.current-path { max-width: 100%; flex: 1; } }
 .import-hint { margin-top: 12px; font-size: 11px; opacity: .65; line-height: 1.6; }
 
 /* Semantic icon colors are shared by toolbar actions, views and command menus. */
