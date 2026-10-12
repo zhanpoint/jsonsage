@@ -3,7 +3,7 @@ import { beautifyJson, indentationOptions, type Indent } from './transforms';
 import { validate, type JsonOptions } from './engine';
 
 export type JsonPath = (string | number)[];
-export type ViewRow = { node: Node; path: JsonPath; depth: number; id: string; label: string };
+export type ViewRow = { node: Node; path: JsonPath; depth: number; id: string; label: string; last: boolean; branches: bigint };
 export const STRUCTURE_LIMIT = 2_000_000;
 const VISIBLE_LIMIT = 50_000;
 export function pathText(path: JsonPath): string {
@@ -58,18 +58,20 @@ export function flattenTree(root: Node, expanded: ReadonlySet<number>, limit = V
 }
 /** Lazy depth-first traversal: pending memory is proportional to depth, not width. */
 function* walkValues(root: Node, descend: (node: Node) => boolean = () => true): Generator<ViewRow> {
-  const stack = [{ node: root, path: [] as JsonPath, index: -1 }];
+  const stack = [{ node: root, path: [] as JsonPath, index: -1, last: true, branches: 0n }];
   while (stack.length) {
     const frame = stack[stack.length - 1];
     if (frame.index === -1) {
-      yield { node: frame.node, path: frame.path, depth: stack.length - 1, id: String(frame.node.offset), label: frame.path.length ? String(frame.path.at(-1)) : '$' };
+      yield { node: frame.node, path: frame.path, depth: stack.length - 1, id: String(frame.node.offset), label: frame.path.length ? String(frame.path.at(-1)) : '$', last: frame.last, branches: frame.branches };
       frame.index = 0;
       if (!isContainer(frame.node) || !descend(frame.node)) { stack.pop(); continue; }
     }
     if (frame.index >= (frame.node.children?.length ?? 0)) { stack.pop(); continue; }
     const index = frame.index++;
     const node = valueChild(frame.node, index);
-    stack.push({ node, path: childPath(frame.node, node, index, frame.path), index: -1 });
+    // A bit marks an ancestor with following siblings; its connecting line continues through this row.
+    const branches = !frame.last ? frame.branches | (1n << BigInt(stack.length - 2)) : frame.branches;
+    stack.push({ node, path: childPath(frame.node, node, index, frame.path), index: -1, last: index === frame.node.children!.length - 1, branches });
   }
 }
 export function findObjectArrays(root: Node, limit = 100, scanLimit = VISIBLE_LIMIT): ViewRow[] {

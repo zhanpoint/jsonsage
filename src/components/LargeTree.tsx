@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowLeft, ArrowRight, ChevronRight, Crosshair } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Crosshair } from 'lucide-react';
 import { BRANCH_PAGE_SIZE, type BranchResult } from '../lib/json/branches';
 import { pathText, type JsonPath } from '../lib/json/views';
+import { TreeBranches, TreeNode, TREE_INDENT, TREE_ROW_HEIGHT } from './TreeNode';
+import { HelpTooltip } from './ui/HelpTooltip';
 export default function LargeTree({ source, language, onContextPath, onLocate }: {
   source: string; language: 'zh' | 'en'; onContextPath: (event: React.MouseEvent, path: JsonPath) => void; onLocate: (start: number, end: number) => void;
 }) {
@@ -26,7 +28,7 @@ export default function LargeTree({ source, language, onContextPath, onLocate }:
   }, [source, path, page]);
   useEffect(() => () => worker.current?.terminate(), []);
   const rows = result?.rows ?? [];
-  const virtual = useVirtualizer({ count: rows.length, getScrollElement: () => scroll.current, estimateSize: () => 36, overscan: 8 });
+  const virtual = useVirtualizer({ count: rows.length, getScrollElement: () => scroll.current, estimateSize: () => TREE_ROW_HEIGHT, overscan: 8 });
   const browse = (next: JsonPath) => { setPath(next); setPage(0); };
   return <div className="large-tree">
     <div className="table-controls"><button className="tool-button" disabled={!path.length} onClick={() => browse(path.slice(0, -1))} aria-label={zh ? '上一级' : 'Parent'}><ArrowLeft size={15} /></button><code>{pathText(path)}</code><span>{zh ? '大文件按分支浏览' : 'Browse large files by branch'}</span>{result && <button className="tool-button" aria-label={zh ? '在代码中定位分支' : 'Locate branch in code'} onClick={() => onLocate(result.parent.offset, result.parent.offset + result.parent.length)}><Crosshair size={15} /></button>}</div>
@@ -35,8 +37,10 @@ export default function LargeTree({ source, language, onContextPath, onLocate }:
       {result && !rows.length && <div className="view-message">{result.parent.type === 'array' || result.parent.type === 'object' ? (zh ? '此节点为空' : 'Empty node') : result.parent.preview}</div>}
       <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>{virtual.getVirtualItems().map(item => {
         const row = rows[item.index], container = row.type === 'array' || row.type === 'object';
-        return <div key={row.offset} className="tree-row" style={{ position: 'absolute', width: '100%', height: item.size, transform: `translateY(${item.start}px)`, paddingLeft: 14 }} onContextMenu={event => onContextPath(event, row.path)}>
-          <button className="node-toggle" disabled={!container} aria-label={`${zh ? '展开' : 'Expand'} ${row.label}`} onClick={() => browse(row.path)}><ChevronRight size={14} style={{ visibility: container ? 'visible' : 'hidden' }} /></button><span className="node-key">{row.label}</span><span className={`node-type type-${row.type}`}>{row.type}</span><span className="node-value">{row.preview}</span><div className="node-actions"><button className="tool-button" onClick={() => onLocate(row.offset, row.offset + row.length)} aria-label={zh ? '在代码中定位节点' : 'Locate in code'}><Crosshair size={14} /></button></div>
+        return <div key={row.offset} className="tree-row" tabIndex={0} style={{ position: 'absolute', width: '100%', height: item.size, transform: `translateY(${item.start}px)`, paddingLeft: 12 + TREE_INDENT }} onDoubleClick={event => { if (container && !(event.target as HTMLElement).closest('button')) browse(row.path); }} onKeyDown={event => { if (event.target === event.currentTarget && container && (event.key === 'Enter' || event.key === 'ArrowRight')) { event.preventDefault(); browse(row.path); } }} onContextMenu={event => onContextPath(event, row.path)}>
+          <TreeBranches depth={1} last={page * BRANCH_PAGE_SIZE + item.index === result!.total - 1} leaf={!container} />
+          <TreeNode type={row.type} label={row.label} index={typeof row.path.at(-1) === 'number'} preview={row.preview} expanded={false} expandable={container} language={language} onToggle={() => browse(row.path)} />
+          <div className="node-actions"><HelpTooltip label={zh ? '在代码中定位节点' : 'Locate in code'}><button data-tone="blue" className="tool-button" onClick={() => onLocate(row.offset, row.offset + row.length)} aria-label={zh ? '在代码中定位节点' : 'Locate in code'}><Crosshair size={14} /></button></HelpTooltip></div>
         </div>;
       })}</div>
     </div>

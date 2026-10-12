@@ -41,6 +41,7 @@ const flat = flattenTree(wide, new Set([0]), 30);
 assert.equal(flat.rows.length, 30);
 assert.equal(flat.truncated, true);
 assert.equal(flat.rows[1].path[0], 0);
+assert.equal(flat.rows.at(-1)!.last, false); // Viewport/limit boundaries are not sibling boundaries.
 assert.equal(flattenTree(root, new Set()).rows.length, 1);
 const duplicates = documentTree('{"x":1,"x":2}', false)!;
 assert.equal(duplicates.children!.length, 2);
@@ -56,6 +57,21 @@ const all = flattenTree(nested, expanded);
 assert.deepEqual(all.rows.map(row => pathText(row.path)), ['$', '$.users', '$.users[0]', '$.users[0].orders', '$.users[0].orders[0]', '$.users[0].orders[0].id']);
 assert.equal(flattenTree(nested, expanded, all.rows.length).truncated, false);
 assert.equal(flattenTree(nested, expanded, all.rows.length - 1).truncated, true);
+const branches = documentTree('{"first":{"nested":[1,2],"last":true},"tail":{"leaf":null}}', false)!;
+expand(branches);
+assert.deepEqual(flattenTree(branches, expanded).rows.map(({ path, last, branches }) => [pathText(path), last, branches]), [
+  ['$', true, 0n], ['$.first', false, 0n], ['$.first.nested', false, 1n],
+  ['$.first.nested[0]', false, 3n], ['$.first.nested[1]', true, 3n],
+  ['$.first.last', true, 1n], ['$.tail', true, 0n], ['$.tail.leaf', true, 0n],
+]);
+const collapsed = flattenTree(branches, new Set([branches.offset]));
+assert.deepEqual(collapsed.rows.map(({ last, branches }) => [last, branches]), [[true, 0n], [false, 0n], [true, 0n]]);
+let deepSource = '0';
+for (let depth = 0; depth < 70; depth++) deepSource = `[${deepSource},0]`;
+const deepTree = documentTree(deepSource, false)!;
+expand(deepTree);
+const deepRow = flattenTree(deepTree, expanded).rows.find(row => row.depth === 70)!;
+assert.equal(deepRow.branches, (1n << 69n) - 1n); // Continuations must not overflow a 32-bit bitmask.
 for (const indent of ['2', '4', 'tab'] as const) {
   const updated = editNode('{"x":0}', documentTree('{"x":0}', false)!, 'add', '{"list":[1,true,null]}', 'data', indent, strict);
   const prefix = indent === 'tab' ? '\t' : ' '.repeat(Number(indent));

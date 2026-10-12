@@ -1,11 +1,12 @@
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Braces, Brackets, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { findNodeAtLocation, type Node } from 'jsonc-parser';
 import { childPath, editNode, findObjectArrays, flattenTree, isContainer, pathText, rawSummary, tableHeaders, type JsonPath, type ViewRow } from '../lib/json/views';
 import type { Indent } from '../lib/json/transforms';
 import type { JsonOptions } from '../lib/json/engine';
 import { HelpTooltip } from './ui/HelpTooltip';
+import { TreeBranches, TreeNode, TREE_INDENT, TREE_MAX_DEPTH, TREE_ROW_HEIGHT } from './TreeNode';
 const GraphView = lazy(() => import('./GraphView'));
 export type StructuredProps = {
   root: Node; source: string; view: 'tree' | 'table' | 'graph'; language: 'zh' | 'en';
@@ -13,7 +14,6 @@ export type StructuredProps = {
   selectedPath?: JsonPath; onSelect?: (node: Node, path: JsonPath, focusEditor?: boolean) => void;
   onChange: (source: string) => void; onContextPath: (event: React.MouseEvent, path: JsonPath) => void;
 };
-const types: Record<string, string> = { string: 'String', number: 'Number', boolean: 'Boolean', null: 'Null', object: 'Object', array: 'Array' };
 
 export default memo(function StructuredViews(props: StructuredProps) {
   if (props.view === 'graph') return <Suspense fallback={<div className="view-message">{props.language === 'zh' ? '正在加载节点图…' : 'Loading graph…'}</div>}><GraphView root={props.root} source={props.source} onContextPath={props.onContextPath} language={props.language} /></Suspense>;
@@ -34,8 +34,9 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
   }, [editing]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { rows, truncated } = useMemo(() => flattenTree(root, expanded), [root, expanded]);
-  const virtual = useVirtualizer({ count: rows.length, getScrollElement: () => scrollRef.current, estimateSize: () => 36, overscan: 8 });
+  const virtual = useVirtualizer({ count: rows.length, getScrollElement: () => scrollRef.current, estimateSize: () => TREE_ROW_HEIGHT, overscan: 8 });
   const selectedNode = selectedPath ? findNodeAtLocation(root, selectedPath) : undefined;
+  const selectedIndex = Math.max(0, rows.findIndex(row => row.node === selectedNode));
   const reveal = useRef<Node | undefined>(undefined);
   useEffect(() => {
     reveal.current = selectedNode;
@@ -55,6 +56,13 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
     setEditing({ row, operation }); setError(''); setKey('');
     setRaw(operation === 'replace' ? source.slice(row.node.offset, row.node.offset + row.node.length) : 'null');
   }
+  function toggle(row: ViewRow) {
+    setExpanded(previous => { const next = new Set(previous); next.has(row.node.offset) ? next.delete(row.node.offset) : next.add(row.node.offset); return next; });
+  }
+  function focusRow(index: number) {
+    virtual.scrollToIndex(index, { align: 'auto' });
+    requestAnimationFrame(() => scrollRef.current?.querySelector<HTMLElement>(`[data-tree-index="${index}"]`)?.focus());
+  }
   function submit() {
     if (!editing) return;
     try {
@@ -71,27 +79,37 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
       <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>
         {virtual.getVirtualItems().map(item => {
           const row = rows[item.index]; const container = isContainer(row.node); const openState = expanded.has(row.node.offset);
-          return <div key={row.id} className="tree-row" data-tree-index={item.index} role="treeitem" aria-selected={row.node === selectedNode} aria-level={row.depth + 1} aria-expanded={container ? openState : undefined} tabIndex={0}
-            style={{ position: 'absolute', top: 0, transform: `translateY(${item.start}px)`, height: item.size, width: '100%', paddingLeft: 12 + Math.min(row.depth, 40) * 18 }}
-            onClick={event => { if (!(event.target as HTMLElement).closest('button')) onSelect?.(row.node, row.path); }}
+          const expandable = container && !!row.node.children?.length;
+          return <div key={row.id} className="tree-row" data-tree-index={item.index} role="treeitem" aria-selected={row.node === selectedNode} aria-level={row.depth + 1} aria-expanded={container ? openState : undefined} tabIndex={item.index === selectedIndex ? 0 : -1}
+            style={{ position: 'absolute', top: 0, transform: `translateY(${item.start}px)`, height: item.size, width: '100%', paddingLeft: 12 + Math.min(row.depth, TREE_MAX_DEPTH) * TREE_INDENT }}
+            onClick={event => { if (!(event.target as HTMLElement).closest('button')) onSelect?.(row.node, row.path, false); }}
+            onDoubleClick={event => { if (expandable && !(event.target as HTMLElement).closest('button')) toggle(row); }}
             onFocus={event => { if (event.target === event.currentTarget) onSelect?.(row.node, row.path, false); }}
             onContextMenu={event => onContextPath(event, row.path)} onKeyDown={event => {
               if (event.target !== event.currentTarget) return;
-              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
                 event.preventDefault();
-                const index = Math.max(0, Math.min(rows.length - 1, item.index + (event.key === 'ArrowDown' ? 1 : -1)));
-                virtual.scrollToIndex(index, { align: 'auto' });
-                requestAnimationFrame(() => scrollRef.current?.querySelector<HTMLElement>(`[data-tree-index="${index}"]`)?.focus());
+                focusRow(event.key === 'Home' ? 0 : event.key === 'End' ? rows.length - 1 : Math.max(0, Math.min(rows.length - 1, item.index + (event.key === 'ArrowDown' ? 1 : -1))));
                 return;
               }
-              if (container && ['Enter', 'ArrowRight', 'ArrowLeft'].includes(event.key)) { event.preventDefault(); setExpanded(previous => { const next = new Set(previous); if (event.key === 'ArrowLeft' || (event.key === 'Enter' && next.has(row.node.offset))) next.delete(row.node.offset); else next.add(row.node.offset); return next; }); }
+              if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                if (expandable) { if (!openState) toggle(row); else focusRow(item.index + 1); }
+              } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                if (expandable && openState) toggle(row);
+                else {
+                  const parent = row.node.parent?.type === 'property' ? row.node.parent.parent : row.node.parent;
+                  const index = rows.findIndex(entry => entry.node === parent);
+                  if (index >= 0) focusRow(index);
+                }
+              } else if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault(); onSelect?.(row.node, row.path, false);
+                if (expandable) toggle(row);
+              }
             }}>
-            {row.depth > 0 && <span className="tree-guides" aria-hidden="true" style={{ width: Math.min(row.depth, 40) * 18 }} />}
-            <button className="node-toggle" disabled={!container} aria-label={`${openState ? (zh ? '折叠' : 'Collapse') : (zh ? '展开' : 'Expand')} ${row.label}`} onClick={() => setExpanded(previous => { const next = new Set(previous); next.has(row.node.offset) ? next.delete(row.node.offset) : next.add(row.node.offset); return next; })}><ChevronRight size={14} style={{ transform: openState ? 'rotate(90deg)' : undefined, visibility: container ? 'visible' : 'hidden' }} /></button>
-            {container && (row.node.type === 'object' ? <Braces className="node-container-icon" size={15} aria-hidden="true" /> : <Brackets className="node-container-icon" size={15} aria-hidden="true" />)}
-            <span className={`node-key${container ? ' node-key-container' : ''}`}>{row.label}</span>
-            <span className={`node-type type-${row.node.type}`}>{types[row.node.type]}</span>
-            <span className={`node-value${container ? ' node-count' : ''}`}>{container ? `${row.node.children?.length ?? 0} ${zh ? (row.node.type === 'object' ? '个字段' : '项') : (row.node.type === 'object' ? 'fields' : 'items')}` : rawSummary(source, row.node)}</span>
+            <TreeBranches depth={row.depth} last={row.last} branches={row.branches} expanded={expandable && openState} leaf={!expandable} />
+            <TreeNode type={row.node.type} label={row.label} index={typeof row.path.at(-1) === 'number'} preview={rawSummary(source, row.node)} expanded={openState} expandable={expandable} language={language} onToggle={() => toggle(row)} />
             <div className="node-actions">
               <HelpTooltip label={zh ? '编辑节点' : 'Edit node'}><button data-tone="blue" disabled={!editable} className="tool-button" aria-label={zh ? '编辑节点' : 'Edit node'} onClick={() => open(row, 'replace')}><Pencil size={13} /></button></HelpTooltip>
               {container && <HelpTooltip label={zh ? '添加子节点' : 'Add child'}><button data-tone="green" disabled={!editable} className="tool-button" aria-label={zh ? '添加子节点' : 'Add child'} onClick={() => open(row, 'add')}><Plus size={14} /></button></HelpTooltip>}
@@ -105,7 +123,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
       <form onSubmit={event => { event.preventDefault(); submit(); }}>
         <div className="node-dialog-title"><strong>{editing.operation === 'delete' ? (zh ? '确认删除节点' : 'Confirm deletion') : editing.operation === 'add' ? (zh ? '添加节点' : 'Add node') : (zh ? '编辑节点' : 'Edit node')}</strong><button type="button" className="tool-button" aria-label={zh ? '关闭' : 'Close'} onClick={() => setEditing(null)}><X size={16} /></button></div>
         {editing.operation === 'delete' && <code>{pathText(editing.row.path)}</code>}
-        {editing.operation === 'add' && editing.row.node.type === 'object' && <label>{zh ? '字段名' : 'Key'}<input autoFocus value={key} onChange={event => setKey(event.target.value)} /></label>}
+        {editing.operation === 'add' && editing.row.node.type === 'object' && <label>{zh ? '字段名' : 'Key'}<input value={key} onChange={event => setKey(event.target.value)} /></label>}
         {editing.operation !== 'delete' && <textarea aria-label={zh ? '节点值' : 'Node value'} value={raw} onChange={event => setRaw(event.target.value)} spellCheck={false} />}
         {error && <p role="alert">{error}</p>}
         <div className="node-dialog-buttons"><button type="button" onClick={() => setEditing(null)}>{zh ? '取消' : 'Cancel'}</button><button type="submit">{zh ? '确认' : 'Confirm'}</button></div>

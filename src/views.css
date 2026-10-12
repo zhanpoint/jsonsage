@@ -8,20 +8,26 @@
 .view-caption { padding: 9px 16px; color: var(--tip-fg); font-size: 11px; line-height: 1.6; border-bottom: 1px solid var(--tip-border); }
 .view-caption span { opacity: .75; }
 .tree-scroll, .table-scroll { height: 420px; overflow: auto; color: var(--tip-fg); background: var(--tip-bg); }
-.tree-row { display: flex; align-items: center; gap: 8px; font: 12px/1.4 Consolas, monospace; }
-.tree-guides { position: absolute; left: 22px; top: 0; bottom: 0; pointer-events: none; background: repeating-linear-gradient(to right, var(--tip-border) 0 1px, transparent 1px 18px); opacity: .55; }
-.node-container-icon { flex: none; color: var(--p-interactive, #8599e6); }
-.node-key-container { font-weight: 650; }
-.node-count { font: 11px/1.4 system-ui, sans-serif; color: var(--tip-fg); opacity: .55; }
+.tree-scroll { padding-block: 6px; }
+.tree-row { display: flex; align-items: center; gap: 6px; padding-right: 8px; font: 12px/1.4 Consolas, monospace; cursor: default; }
+.tree-branches { position: absolute; left: 12px; top: 0; pointer-events: none; overflow: visible; color: var(--tip-fg); opacity: .22; }
+.tree-branches path { fill: none; stroke: currentColor; stroke-width: 1; stroke-dasharray: 2 2; }
+.tree-row:focus-visible { outline: 1px solid color-mix(in srgb, var(--p-interactive, #6579d9) 55%, transparent); outline-offset: -1px; }
+.node-icon { flex: none; }
 .tree-row:hover, .tree-row:focus-within, .data-table-row:not(.table-header):hover { background: color-mix(in srgb, var(--tip-fg) 5%, var(--tip-bg)); }
-.node-toggle { flex: none; width: 22px; height: 26px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 5px; background: transparent; color: inherit; }
-.node-toggle:disabled { cursor: default; }
-.node-key { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
-.node-type { border-radius: 4px; padding: 2px 5px; font: 10px/1.3 system-ui, sans-serif; color: var(--tip-fg); background: color-mix(in srgb, var(--tip-fg) 8%, transparent); flex: none; }
-.type-string { color: #32976a; }.type-number { color: #c58035; }.type-boolean { color: #8274d9; }
-.node-value { opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.node-actions { display: flex; margin-left: auto; padding-right: 10px; flex: none; }
-.node-actions .tool-button { height: 26px; width: 26px; color: var(--tip-fg); }
+.node-toggle, .node-toggle-space { flex: none; width: 16px; height: 16px; }
+.node-toggle { position: relative; padding: 0; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--tip-fg) 28%, transparent); border-radius: 3px; background: var(--tip-bg); color: var(--tip-fg); cursor: pointer; }
+.node-key { max-width: min(230px, 35%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+.node-index, .node-colon { color: var(--tip-fg); opacity: .7; }
+.node-colon { margin-left: -3px; opacity: .5; }
+.node-type { width: 45px; font: 10px/1.3 system-ui, sans-serif; color: var(--tip-fg); opacity: .65; flex: none; }
+.type-object { color: var(--icon-amber); }.type-array { color: var(--icon-blue); }
+.type-string { color: var(--icon-green); }.type-number { color: var(--icon-cyan); }.type-boolean { color: var(--icon-violet); }.type-null { color: var(--icon-slate); }
+.node-value { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.node-actions { display: flex; flex: none; visibility: hidden; }
+.tree-row:hover .node-actions, .tree-row:focus-within .node-actions { visibility: visible; }
+.node-actions .tool-button { height: 24px; width: 24px; color: var(--tip-fg); }
+@media (hover: none) { .node-actions { visibility: visible; } }
 .node-dialog { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(500px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; margin: 0; border: 1px solid var(--tip-border); border-radius: 12px; padding: 20px; background: var(--tip-bg); color: var(--tip-fg); box-shadow: var(--tip-shadow); z-index: 100; }
 .node-dialog::backdrop { background: #0006; }
 .node-dialog-title { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
