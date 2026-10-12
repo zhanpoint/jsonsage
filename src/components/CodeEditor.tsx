@@ -2,7 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 import { Annotation, Compartment, EditorState, type StateEffect } from '@codemirror/state';
 import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
-import { bracketMatching, foldGutter, foldKeymap, foldedRanges, indentOnInput, indentUnit, unfoldEffect } from '@codemirror/language';
+import { bracketMatching, foldKeymap, foldedRanges, indentOnInput, indentUnit, unfoldEffect } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap, indentWithTab, undo, redo, undoDepth, redoDepth, isolateHistory } from '@codemirror/commands';
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
 import { search, searchKeymap, openSearchPanel } from '@codemirror/search';
@@ -13,6 +13,7 @@ import { diffHighlights, setDiffHighlights } from '../lib/diffHighlights';
 import type { DiffHighlight } from '../lib/json/analysis';
 import { documentChange, editorDiagnostics, registerEditor, type EditorHandle, type HistoryState } from '../lib/codeEditor';
 import { smartCandidate } from '../lib/json/smartInput';
+import { inlineFolding } from '../lib/inlineFolding';
 
 export type { EditorHandle, HistoryState } from '../lib/codeEditor';
 type Props = {
@@ -60,13 +61,7 @@ export default function CodeEditor(props: Props) {
       state: EditorState.create({
         doc: initial.source,
         extensions: [
-          json(), diffHighlights, lintGutter(), lineNumbers(), foldGutter({ markerDOM(open) {
-            const marker = document.createElement('span');
-            marker.className = 'cm-foldChevron';
-            marker.dataset.open = String(open);
-            marker.title = latest.current.language === 'zh' ? (open ? '折叠此行' : '展开此行') : (open ? 'Fold line' : 'Unfold line');
-            return marker;
-          } }), bracketMatching(), indentOnInput(),
+          json(), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
           drawSelection(), highlightActiveLine(), highlightActiveLineGutter(),
           history(), search({ top: true }),
           config.readOnly.of([EditorState.readOnly.of(!!initial.readOnly), EditorView.editable.of(!initial.readOnly)]),
