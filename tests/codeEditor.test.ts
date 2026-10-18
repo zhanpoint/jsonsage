@@ -51,3 +51,18 @@ assert.equal(diagnostics[0].to, state.doc.length);
 state = state.update(setDiagnostics(state, [])).state;
 assert.equal(diagnosticCount(state), 0);
 console.log('CM6 external changes, selection, undo/redo and diagnostic checks passed.');
+
+const { indexJsonFolds, foldOnLine } = await import('../src/lib/json/foldIndex');
+const indexedSource = '[\n {"escaped":"}\\\"[", "nested":[\n 1,2\n ]},\n {}\n]';
+const foldRanges = indexJsonFolds(indexedSource);
+assert.deepEqual(foldOnLine(foldRanges, 0, 1), { from: 1, to: indexedSource.lastIndexOf(']') });
+const nested = indexedSource.indexOf('[', indexedSource.indexOf('nested'));
+assert.deepEqual(foldOnLine(foldRanges, nested, nested + 1), { from: nested + 1, to: indexedSource.indexOf(']', nested) });
+assert.equal(foldOnLine(foldRanges, indexedSource.lastIndexOf('{}'), indexedSource.lastIndexOf('{}') + 2), null);
+const { largeJsonLanguage, foldIndex, setFoldIndex } = await import('../src/lib/largeJsonLanguage');
+let indexedState = EditorState.create({ doc: indexedSource, extensions: largeJsonLanguage });
+indexedState = indexedState.update({ effects: setFoldIndex.of(foldRanges) }).state;
+assert.equal(indexedState.field(foldIndex), foldRanges);
+indexedState = indexedState.update({ changes: { from: 0, insert: ' ' } }).state;
+assert.equal(indexedState.field(foldIndex), null, 'Edits invalidate old folding offsets until the worker provides a fresh index');
+console.log('Large JSON fold indexes ignore quoted delimiters and invalidate stale offsets.');

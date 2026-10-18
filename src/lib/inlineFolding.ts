@@ -1,3 +1,4 @@
+import { foldIndex } from './largeJsonLanguage';
 import { EditorState } from '@codemirror/state';
 import { Decoration, ViewPlugin, WidgetType, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { codeFolding, foldable, foldEffect, foldedRanges, foldState, syntaxTree, unfoldEffect } from '@codemirror/language';
@@ -50,6 +51,7 @@ export const inlineFolding = [codeFolding(), ViewPlugin.fromClass(class {
   constructor(view: EditorView) { this.decorations = toggles(view); }
   update(update: ViewUpdate) {
     if (update.docChanged || update.viewportChanged ||
+      update.startState.field(foldIndex, false) !== update.state.field(foldIndex, false) ||
       update.startState.field(foldState) !== update.state.field(foldState) ||
       syntaxTree(update.startState) !== syntaxTree(update.state) ||
       update.startState.facet(EditorState.phrases) !== update.state.facet(EditorState.phrases)) {

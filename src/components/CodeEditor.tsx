@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { Annotation, Compartment, EditorState, type StateEffect } from '@codemirror/state';
 import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
@@ -13,10 +13,12 @@ import { diffHighlights, setDiffHighlights } from '../lib/diffHighlights';
 import type { DiffHighlight } from '../lib/json/analysis';
 import { documentChange, editorDiagnostics, registerEditor, type EditorHandle, type HistoryState } from '../lib/codeEditor';
 import { smartCandidate } from '../lib/json/smartInput';
+import { LARGE_DOCUMENT, largeJsonLanguage, setFoldIndex } from '../lib/largeJsonLanguage';
 import { inlineFolding } from '../lib/inlineFolding';
 
 export type { EditorHandle, HistoryState } from '../lib/codeEditor';
 type Props = {
+  documentId?: string; documentIds?: readonly string[];
   managedFormat?: boolean;
   highlights?: DiffHighlight[];
   readOnly?: boolean; onCursor?: (offset: number) => void;
@@ -38,30 +40,32 @@ export default function CodeEditor(props: Props) {
   const view = useRef<EditorView | null>(null);
   const latest = useRef(props); latest.current = props;
   const source = useRef(props.source);
-  const compartments = useRef({ indent: new Compartment(), theme: new Compartment(), label: new Compartment(), readOnly: new Compartment() });
+  const [documentRevision, setDocumentRevision] = useState(0);
+  const compartments = useRef({ indent: new Compartment(), theme: new Compartment(), label: new Compartment(), syntax: new Compartment(), readOnly: new Compartment() });
+  const switchDocument = useRef<((props: Props) => void) | null>(null);
+  const documents = useRef(new Map<string, { state: EditorState; source: string; top: number; left: number }>());
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const initial = latest.current;
     const config = compartments.current;
     let historyState: HistoryState = { undo: false, redo: false };
     source.current = initial.source;
     let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
     let pendingSnapshot = false;
-    const flush = () => {
+    const flush = (target = latest.current) => {
       clearTimeout(snapshotTimer);
       if (!pendingSnapshot) return;
       pendingSnapshot = false;
       source.current = instance.state.doc.toString();
-      latest.current.onChange(source.current);
-      latest.current.onPendingChange?.(false);
+      setDocumentRevision(revision => revision + 1);
+      target.onChange(source.current);
+      target.onPendingChange?.(false);
     };
     const format = () => { flush(); requestAnimationFrame(() => latest.current.onFormat()); return true; };
-    const instance = new EditorView({
-      parent: host.current!,
-      state: EditorState.create({
-        doc: initial.source,
+    const createState = (document: Props) => EditorState.create({
+        doc: document.source,
         extensions: [
-          json(), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
+          config.syntax.of(document.source.length > LARGE_DOCUMENT ? largeJsonLanguage : json()), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
           drawSelection(), highlightActiveLine(), highlightActiveLineGutter(),
           history(), search({ top: true }),
           config.readOnly.of([EditorState.readOnly.of(!!initial.readOnly), EditorView.editable.of(!initial.readOnly)]),
@@ -74,7 +78,7 @@ export default function CodeEditor(props: Props) {
           EditorView.updateListener.of(update => {
             if (update.selectionSet || update.docChanged) latest.current.onCursor?.(update.state.selection.main.from);
             if (update.docChanged && !update.transactions.some(transaction => transaction.annotation(externalChange))) {
-              if (update.state.doc.length > 2_000_000) {
+              if (update.state.doc.length > LARGE_DOCUMENT) {
                 if (!pendingSnapshot) { pendingSnapshot = true; latest.current.onPendingChange?.(true); }
                 clearTimeout(snapshotTimer); snapshotTimer = setTimeout(flush, 300);
               } else {
@@ -111,8 +115,8 @@ export default function CodeEditor(props: Props) {
             return event.defaultPrevented;
           } }),
         ],
-      }),
-    });
+      });
+    const instance = new EditorView({ parent: host.current!, state: createState(initial) });
     view.current = instance;
     const handle: EditorHandle = {
       flush, format,
@@ -129,18 +133,43 @@ export default function CodeEditor(props: Props) {
       },
     };
     initial.editorRef.current = handle;
-    const unregister = initial.readOnly ? () => {} : registerEditor(instance.dom, handle);
+    const unregister = registerEditor(instance.dom, handle);
     const syncHistory = () => latest.current.onHistory(handle.history(), handle);
     instance.dom.addEventListener('focusin', syncHistory);
     initial.onHistory(handle.history(), handle);
+    let current = initial;
+    switchDocument.current = next => {
+      if (next.documentId === current.documentId) { current = next; return; }
+      flush(current);
+      if (current.documentId) documents.current.set(current.documentId, { state: instance.state, source: source.current, top: instance.scrollDOM.scrollTop, left: instance.scrollDOM.scrollLeft });
+      const cached = next.documentId ? documents.current.get(next.documentId) : undefined;
+      if (next.documentId) documents.current.delete(next.documentId);
+      instance.setState(cached?.state ?? createState(next));
+      source.current = cached?.source ?? next.source;
+      current = next;
+      historyState = handle.history();
+      next.onHistory(historyState, handle);
+      next.onPendingChange?.(false);
+      next.onCursor?.(instance.state.selection.main.head);
+      instance.requestMeasure({ read: () => null, write() {
+        if (current.documentId !== next.documentId) return;
+        instance.scrollDOM.scrollTop = cached?.top ?? 0;
+        instance.scrollDOM.scrollLeft = cached?.left ?? 0;
+      } });
+    };
     return () => {
       clearTimeout(snapshotTimer);
       initial.editorRef.current = null;
       view.current = null;
+      switchDocument.current = null; documents.current.clear();
       instance.dom.removeEventListener('focusin', syncHistory); unregister();
       instance.destroy();
     };
   }, []);
+  useLayoutEffect(() => { switchDocument.current?.(props); });
+  useEffect(() => {
+    if (props.documentIds) for (const id of documents.current.keys()) if (!props.documentIds.includes(id)) documents.current.delete(id);
+  }, [props.documentIds]);
 
   useEffect(() => {
     const instance = view.current;
@@ -149,7 +178,7 @@ export default function CodeEditor(props: Props) {
     const changes = documentChange(instance.state.doc.toString(), props.source);
     source.current = props.source;
     instance.dispatch({ changes, annotations: [externalChange.of(true), isolateHistory.of('full')], userEvent: 'input.external' });
-  }, [props.source]);
+  }, [props.source, props.documentId]);
   useEffect(() => {
     const instance = view.current;
     if (instance) instance.dispatch(setDiagnostics(instance.state, editorDiagnostics(props.diagnostics, instance.state.doc.length).map(diagnostic => {
@@ -157,11 +186,26 @@ export default function CodeEditor(props: Props) {
       return { ...diagnostic, message: `${props.language === 'zh' ? `第 ${line.number} 行，第 ${diagnostic.from - line.from + 1} 列` : `Line ${line.number}, Col ${diagnostic.from - line.from + 1}`} · ${diagnostic.message}`,
         actions: props.onRepair && diagnostic.severity === 'error' ? [{ name: props.language === 'zh' ? '自动修复' : 'Auto-Fix', apply: () => latest.current.onRepair?.() }] : undefined };
     })));
-  }, [props.diagnostics, props.source, props.language]);
-  useEffect(() => { view.current?.dispatch({ effects: compartments.current.indent.reconfigure(indentation(props.indent)) }); }, [props.indent]);
-  useEffect(() => { view.current?.dispatch({ effects: compartments.current.readOnly.reconfigure([EditorState.readOnly.of(!!props.readOnly), EditorView.editable.of(!props.readOnly)]) }); }, [props.readOnly]);
-  useEffect(() => { view.current?.dispatch({ effects: compartments.current.theme.reconfigure(editorTheme(props.theme === 'dark')) }); }, [props.theme]);
-  useEffect(() => { view.current?.dispatch({ effects: compartments.current.label.reconfigure([EditorView.contentAttributes.of({ 'aria-label': props.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(props.language === 'zh' ? chineseEditorPhrases : {})]) }); }, [props.label, props.language]);
-  useEffect(() => { view.current?.dispatch({ effects: setDiffHighlights.of(props.highlights ?? []) }); }, [props.highlights]);
+  }, [props.diagnostics, props.source, props.language, props.documentId]);
+  const large = props.source.length > LARGE_DOCUMENT;
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.syntax.reconfigure(large ? largeJsonLanguage : json()) }); }, [large, props.documentId]);
+  useEffect(() => {
+    const instance = view.current;
+    if (!large || !instance) return;
+    const document = instance.state.doc;
+    const worker = new Worker(new URL('../workers/folds.worker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = (event: MessageEvent<Uint32Array>) => {
+      if (view.current === instance && instance.state.doc === document) instance.dispatch({ effects: setFoldIndex.of(event.data) });
+      worker.terminate();
+    };
+    worker.onerror = () => worker.terminate();
+    worker.postMessage(props.source);
+    return () => worker.terminate();
+  }, [large, props.source, props.documentId, documentRevision]);
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.indent.reconfigure(indentation(props.indent)) }); }, [props.indent, props.documentId]);
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.readOnly.reconfigure([EditorState.readOnly.of(!!props.readOnly), EditorView.editable.of(!props.readOnly)]) }); }, [props.readOnly, props.documentId]);
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.theme.reconfigure(editorTheme(props.theme === 'dark')) }); }, [props.theme, props.documentId]);
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.label.reconfigure([EditorView.contentAttributes.of({ 'aria-label': props.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(props.language === 'zh' ? chineseEditorPhrases : {})]) }); }, [props.label, props.language, props.documentId]);
+  useEffect(() => { view.current?.dispatch({ effects: setDiffHighlights.of(props.highlights ?? []) }); }, [props.highlights, props.documentId]);
   return <div ref={host} />;
 }

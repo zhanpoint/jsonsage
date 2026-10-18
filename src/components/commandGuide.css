@@ -1,0 +1,27 @@
+.command-guide { width: min(780px, calc(100vw - 24px)); top: 5vh; max-height: 90dvh; }
+.guide-body { overflow-y: auto; padding: 0 22px 20px; }
+.guide-lead, .guide-context p { font-size: 13px; line-height: 1.8; opacity: .75; }
+.guide-workflow { padding: 12px 14px; border-radius: 8px; background: color-mix(in srgb, var(--tip-fg) 5%, transparent); font-size: 13px; line-height: 1.7; }
+.guide-entry { border-bottom: 1px solid var(--tip-border); }
+.guide-entry summary { display: flex; align-items: center; gap: 12px; padding: 16px 6px; cursor: pointer; border-radius: 8px; list-style: none; }
+.guide-entry summary::-webkit-details-marker { display: none; }
+.guide-entry summary:hover { background: color-mix(in srgb, var(--tip-fg) 5%, transparent); }
+.guide-entry summary:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.guide-summary { flex: 1; min-width: 0; display: grid; gap: 5px; font-size: 14px; }
+.guide-summary > span { font-size: 12px; opacity: .65; line-height: 1.5; }
+.guide-entry kbd { font-size: 11px; opacity: .65; white-space: nowrap; }
+.guide-chevron { flex-shrink: 0; opacity: .5; }
+.guide-entry[open] .guide-chevron { transform: rotate(180deg); }
+.guide-detail { padding: 0 6px 16px 36px; font-size: 13px; line-height: 1.8; }
+.guide-detail p { margin: 0 0 12px; }
+.guide-detail p > strong { display: block; font-size: 12px; margin-bottom: 4px; }
+.guide-example { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.guide-example > div { min-width: 0; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--tip-fg) 5%, transparent); }
+.guide-example span { opacity: .55; font-size: 11px; }
+.guide-example pre { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.guide-note { opacity: .7; }
+.guide-context h2 { font-size: 14px; margin-top: 22px; }
+.command-guide footer a { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-size: 12px; text-underline-offset: 4px; }
+.command-guide footer a:hover { opacity: .7; }
+.header-control.repo-link { text-decoration: none; }
+@media (max-width: 600px) { .guide-body { padding: 0 14px 14px; } .guide-detail { padding-left: 6px; } .guide-example { grid-template-columns: 1fr; } .guide-entry summary { gap: 8px; } }
