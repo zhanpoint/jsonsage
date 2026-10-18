@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { PaletteCommand } from '../components/CommandPalette';
-import { readShortcuts, shortcutFromEvent } from '../lib/shortcuts';
+import { readShortcuts, shortcutFromEvent, writeShortcuts } from '../lib/shortcuts';
 import { editorAt } from '../lib/codeEditor';
 
 export function useShortcuts() {
   const [bindings, setBindings] = useState(() => readShortcuts(localStorage.getItem('jsonsage-shortcuts')));
-  useEffect(() => { localStorage.setItem('jsonsage-shortcuts', JSON.stringify(bindings)); }, [bindings]);
+  useEffect(() => { localStorage.setItem('jsonsage-shortcuts', writeShortcuts(bindings)); }, [bindings]);
   return { bindings, setBindings };
 }
 export function useCommandKeyboard(commands: PaletteCommand[], flush: () => void, scope?: RefObject<HTMLElement | null>) {

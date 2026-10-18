@@ -68,7 +68,7 @@ export default function CodeEditor(props: Props) {
           config.indent.of(indentation(initial.indent)), config.theme.of(editorTheme(initial.theme === 'dark')),
           config.label.of([EditorView.contentAttributes.of({ 'aria-label': initial.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(initial.language === 'zh' ? chineseEditorPhrases : {})]),
           keymap.of([
-            ...(!initial.managedFormat ? [{ key: 'Mod-Enter', run: format }, { key: 'Alt-Shift-f', run: format }] : []),
+            ...(!initial.managedFormat ? [{ key: 'Mod-Enter', run: format }] : []),
             indentWithTab, ...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap,
           ]),
           EditorView.updateListener.of(update => {
