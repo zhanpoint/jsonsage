@@ -48,3 +48,6 @@
 .record-menu-item[data-danger], .record-menu-item[data-danger] svg, .record-icon.danger { color: var(--icon-red); }
 @media (hover: none) { .document-tab .record-more, .tab-close, .history-row-actions { opacity: 1; } }
 @media (max-width: 600px) { .document-tab { max-width: 175px; } .document-tab-label { max-width: 115px; } }
+.document-tab-rename { width: 130px; padding: 2px 4px; border: 1px solid var(--icon-blue); border-radius: 4px; outline: none; background: transparent; color: inherit; font: inherit; }
+
+.document-tab-rename:focus, .document-tab-rename:focus-visible { outline: none; box-shadow: none; border: 1px solid var(--icon-blue); }

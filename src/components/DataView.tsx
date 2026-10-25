@@ -13,6 +13,6 @@ export default function DataView({ root, pending, valid, structureError, onLocat
   if (pending) return message(zh ? '正在检查 JSON…' : 'Checking JSON…');
   if (!valid) return message(zh ? '修复语法问题后即可使用结构化视图。' : 'Fix syntax issues to use structured views.');
   return <div className="data-view"><Suspense fallback={message(zh ? '正在加载视图…' : 'Loading view…')}>
-    {props.source.length > STRUCTURE_LIMIT || structureError ? props.view === 'tree' ? <LargeTree source={props.source} language={props.language} onContextPath={props.onContextPath} onLocate={onLocate} /> : <LargeViews source={props.source} language={props.language} mode={props.view} onContextPath={props.onContextPath} /> : root ? <StructuredViews {...props} root={root} /> : message(zh ? '此 JSON 无法生成结构化视图。' : 'Unable to build a structured view.')}
+    {props.source.length > STRUCTURE_LIMIT || structureError ? props.view === 'tree' ? <LargeTree treeFold={props.treeFold} source={props.source} language={props.language} onContextPath={props.onContextPath} onLocate={onLocate} /> : <LargeViews source={props.source} language={props.language} mode={props.view} onContextPath={props.onContextPath} /> : root ? <StructuredViews {...props} root={root} /> : message(zh ? '此 JSON 无法生成结构化视图。' : 'Unable to build a structured view.')}
   </Suspense></div>;
 }

@@ -27,7 +27,7 @@ export function EditorSettings({ language, indent, onIndentChange, autoSave, onA
           <span>{value ? (zh ? '自动保存' : 'Automatic') : (zh ? '手动保存' : 'Manual')}</span>
         </label>)}</div>
       </fieldset>
-      <fieldset className="settings-group"><legend>{zh ? '格式化缩进' : 'Formatting indentation'}</legend>
+      <fieldset className="settings-group"><legend>{zh ? '美化缩进' : 'Formatting indentation'}</legend>
         <div className="settings-segments">{(['2', '4', 'tab'] as const).map((value) => <label key={value}>
           <input type="radio" name="editor-indent" value={value} checked={indent === value} onChange={() => onIndentChange(value)} />
           <span>{value === 'tab' ? 'Tab' : zh ? `${value} 空格` : `${value} spaces`}</span>

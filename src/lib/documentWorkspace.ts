@@ -1,11 +1,11 @@
 import { historyStore, availableFileName, fileNameKey, type HistoryStore } from './history';
 import { HistorySession, newHistoryDraft, type HistoryDraft } from './historySession';
 
-export type DocumentView = 'code' | 'tree' | 'table' | 'graph' | 'query' | 'diff' | 'jq' | 'types';
-export type TabTools = { view: DocumentView; split: boolean; compareSource: string; queryExpression: string; jqExpression: string };
+export type DocumentView = 'code' | 'tree' | 'table' | 'graph' | 'diff' | 'types';
+export type TabTools = { view: DocumentView; compareSource: string };
 export type DocumentTab = { id: string; pinned: boolean; session: HistorySession; tools: TabTools };
 type RememberedTabs = { active?: string; tabs: { record: string; pinned: boolean }[] };
-const tools = (): TabTools => ({ view: 'code', split: false, compareSource: '{}', queryExpression: '$.store.book[*].author', jqExpression: '.items[] | {id, title}' });
+const tools = (): TabTools => ({ view: 'code', compareSource: '{}' });
 
 /** Only document sessions stay alive in background tabs; the UI mounts one editor. */
 export class DocumentWorkspace {

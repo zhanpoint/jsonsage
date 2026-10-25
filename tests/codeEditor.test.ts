@@ -66,3 +66,17 @@ assert.equal(indexedState.field(foldIndex), foldRanges);
 indexedState = indexedState.update({ changes: { from: 0, insert: ' ' } }).state;
 assert.equal(indexedState.field(foldIndex), null, 'Edits invalidate old folding offsets until the worker provides a fresh index');
 console.log('Large JSON fold indexes ignore quoted delimiters and invalidate stale offsets.');
+
+const { validate, validateIndexed } = await import('../src/lib/json/engine');
+for (const text of [indexedSource, '{"x": [1,2], "x": {}}', '/* { ignored } */ {"a":[1,],}', '{"incomplete": [', '["😀", {"id":18446744073709551615}]', '[' + '{} ,'.repeat(2000) + '{}]']) {
+  for (const mode of ['strict', 'jsonc'] as const) {
+    const { folds, ...validation } = validateIndexed(text, { mode });
+    assert.deepEqual(validation, validate(text, { mode }), 'Shared indexing must preserve diagnostics');
+    assert.deepEqual(folds, indexJsonFolds(text), 'Validation and folding share original source offsets');
+  }
+}
+console.log('Shared validation indexes preserve comments, invalid-input offsets and growing buffers.');
+const mixed = '[{}, {"a":[]}, {\n "next": true\n}]';
+assert.deepEqual(foldOnLine(indexJsonFolds(mixed), 1, mixed.indexOf('\n')), { from: mixed.lastIndexOf('{') + 1, to: mixed.lastIndexOf('}') });
+const singleLine = '[' + '{"a":[{}]},'.repeat(10000) + '{}]';
+assert.equal(foldOnLine(indexJsonFolds(singleLine), 0, singleLine.length), null);

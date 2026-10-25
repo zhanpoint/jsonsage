@@ -5,6 +5,7 @@ export type EditorHandle = {
   locate: (start: number, end: number, focus?: boolean) => void;
   undo: () => void; redo: () => void; search: () => void; flush: () => void; format: () => void;
   history: () => HistoryState;
+  setFolded: (folded: boolean) => void;
 };
 const editors = new WeakMap<Element, EditorHandle>();
 let focused: { element: HTMLElement; handle: EditorHandle } | undefined;

@@ -163,7 +163,7 @@ secondTab.session.change({ source: 'second private body' });
 workspace.activate(firstTab.id);
 assert.equal(firstTab.session.snapshot().draft?.source, 'first private body');
 assert.equal(secondTab.session.snapshot().draft?.source, 'second private body');
-workspace.updateTools(firstTab.id, { view: 'tree', queryExpression: '$.items' });
+workspace.updateTools(firstTab.id, { view: 'tree' });
 assert.equal(secondTab.tools.view, 'code');
 await workspace.saveAll();
 workspace.pin(secondTab.id, true); workspace.remove(secondTab.id);

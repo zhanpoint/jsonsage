@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Background, Controls, Position, ReactFlow, type Edge, type Node as FlowNode } from '@xyflow/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Maximize2, Minimize2, Scan } from 'lucide-react';
+import { Background, ControlButton, Controls, Position, ReactFlow, useReactFlow, type Edge, type Node as FlowNode } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Node } from 'jsonc-parser';
 import { childPath, rawSummary, valueChild, isContainer, type JsonPath } from '../lib/json/views';
@@ -49,14 +49,40 @@ export function GraphCanvas({ nodes: suppliedNodes, edges: suppliedEdges, items,
   }, [suppliedNodes, items]);
   const edges = useMemo(() => suppliedEdges ?? (items ?? []).filter(item => item.parent).map(item => ({ id: `${item.parent}-${item.id}`, source: item.parent!, target: item.id, type: 'smoothstep' })), [suppliedEdges, items]);
   const zh = language === 'zh';
+  const surface = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState(false);
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === surface.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+  async function toggleFullscreen() {
+    setFullscreenError(false);
+    try {
+      if (document.fullscreenElement === surface.current) await document.exitFullscreen();
+      else await surface.current?.requestFullscreen();
+    } catch { setFullscreenError(true); }
+  }
   return <>
     <div className="table-controls"><label>{zh ? '展开深度' : 'Depth'} <span className="select-control"><select value={depth} onChange={event => onDepthChange(Number(event.target.value))}>{[1, 2, 3, 4, 5, 6].map(value => <option key={value}>{value}</option>)}</select><ChevronDown size={13} aria-hidden="true" /></span></label><span>{nodes.length} {zh ? '个节点' : 'nodes'}{truncated ? (zh ? ' · 部分节点已省略' : ' · Some nodes omitted') : ''}</span></div>
-    <div className="graph-surface">
+    <div className="graph-surface" ref={surface}>
+      {fullscreenError && <div className="graph-error" role="alert">{zh ? '浏览器未允许全屏显示。' : 'The browser did not allow fullscreen.'}</div>}
       <ReactFlow key={`${nodes[0]?.id}-${depth}-${nodes.length}`} nodes={nodes} edges={edges} fitView fitViewOptions={{ maxZoom: 1, padding: .15 }} minZoom={.05} maxZoom={2} nodesDraggable={false} nodesConnectable={false} onlyRenderVisibleElements
         onNodeContextMenu={(event, node) => onContextPath(event, node.data.path)}>
 
-        <Background gap={20} size={1} /><Controls position="top-left" orientation="horizontal" showInteractive={false} />
+        <Background gap={20} size={1} /><GraphControls zh={zh} fullscreen={fullscreen} onFullscreen={() => void toggleFullscreen()} />
       </ReactFlow>
     </div>
   </>;
+}
+
+function GraphControls({ zh, fullscreen, onFullscreen }: { zh: boolean; fullscreen: boolean; onFullscreen: () => void }) {
+  const { fitView } = useReactFlow();
+  const fitLabel = zh ? '适应视图' : 'Fit view';
+  const fullscreenLabel = fullscreen ? (zh ? '退出全屏' : 'Exit fullscreen') : (zh ? '全屏显示' : 'Fullscreen');
+  return <Controls position="top-left" orientation="horizontal" showInteractive={false} showFitView={false}>
+    <ControlButton onClick={() => void fitView({ padding: .15, maxZoom: 1 })} aria-label={fitLabel} title={fitLabel}><Scan size={16} aria-hidden="true" /></ControlButton>
+    <ControlButton onClick={onFullscreen} aria-label={fullscreenLabel} title={fullscreenLabel} aria-pressed={fullscreen}>{fullscreen ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}</ControlButton>
+  </Controls>;
 }

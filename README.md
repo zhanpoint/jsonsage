@@ -5,7 +5,7 @@
 <h1 align="center">JsonSage</h1>
 
 <p align="center"><strong>看清 JSON，保持精度，数据留在本地。</strong></p>
-<p align="center">基于 CodeMirror 6 的 JSON / JSONC 网页工具：编辑、查询、对比与类型生成，全部在浏览器中完成。</p>
+<p align="center">基于 CodeMirror 6 的 JSON / JSONC 网页工具：编辑、对比与类型生成，全部在浏览器中完成。</p>
 <p align="center"><sub>A local-first JSON / JSONC toolbox for the browser: edit, query, diff and generate types without uploading your data.</sub></p>
 
 <p align="center">
@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" width="860" alt="JsonSage 演示动画：长整数保持精度、格式化、代码与树形联动、JSONPath 与 JQ 查询" />
+  <img src="docs/demo.gif" width="860" alt="JsonSage 演示动画：长整数保持精度、格式化、代码与树形联动、结构对比" />
 </p>
 
 <p align="center"><sub>演示动画（25 秒）。<a href="docs/demo.mp4">下载 MP4 高清版</a></sub></p>
@@ -38,10 +38,10 @@
 
 ## 为什么用 JsonSage
 
-- **保留长整数**：格式化、压缩、树形展示、JSONPath 和结构对比都保留数字原文，雪花 ID 不会变成另一串数字。
+- **保留长整数**：格式化、压缩、树形展示和结构对比都保留数字原文，雪花 ID 不会变成另一串数字。
 - **减少等待**：CodeMirror 虚拟视口、虚拟滚动与 Web Worker 分担编辑、计算和渲染；大文件采用分支浏览和分页。
-- **用熟悉的方式看数据**：代码、树形、表格、节点图随时切换，双栏模式让代码与树节点相互定位。
-- **从问题到结果**：精确到行列的诊断、一键修复、JSONPath / JQ 查询和结构对比，覆盖常见调试流程。
+- **用熟悉的方式看数据**：代码、树形、表格、节点图随时切换，树形视图将代码与树并排展示并相互定位。
+- **从问题到结果**：精确到行列的诊断、一键修复、结构对比，覆盖常见调试流程。
 - **键盘优先**：命令面板、默认快捷键、自定义键位；格式化和复制结果遵循设置的缩进。
 - **数据留在本地**：无后台解析、无分析脚本；生产版支持 PWA 安装和离线使用。
 
@@ -58,7 +58,7 @@ npm run dev
 
 打开 [http://127.0.0.1:5174](http://127.0.0.1:5174) 即可使用。
 
-**试一试**：把下面的 JSON 粘贴到代码视图，按 `Ctrl / ⌘ + Enter` 格式化，再按 `Alt + B` 打开双栏查看节点。
+**试一试**：把下面的 JSON 粘贴到代码视图，按 `Ctrl / ⌘ + Enter` 格式化，再按 `Alt + 2` 打开树形视图查看节点。
 
 ```json
 {
@@ -71,9 +71,8 @@ npm run dev
 }
 ```
 
-- 在 **JSONPath** 中输入 `$.users[*].name`，得到两个姓名。
-- 在 **JQ** 中输入 `.users[] | {name, role}`，提取所需字段。
 - 右键任意字段，可复制它的路径。
+- 右键字符串字段选择 **文本预览**，或将光标放入字符串后点击底部 **文本预览**，即可阅读 Markdown、表格、代码块及 `$…$` / `$$…$$` 公式。阅读面板不锁定编辑器，支持原文切换和复制完整文本；源内容更改后可主动刷新。预览最多展示前 50,000 个字符，外部图片仅显示替代文字，不自动请求远程资源。
 
 构建并在本地预览生产版（PWA 仅在生产构建中启用，开发模式不注册 Service Worker）：
 
@@ -91,9 +90,8 @@ npm run preview -- --host 127.0.0.1 --port 5175
 | 功能 | 你可以做什么 |
 | --- | --- |
 | **代码编辑** | JSON / JSONC 高亮、行号、折叠、括号匹配；CodeMirror 原生查找替换和撤销重做 |
-| **多视图** | 树节点增删改；对象数组自动提取表头；层级节点图支持深度、缩放和平移；双栏默认关闭 |
+| **多视图** | 树节点增删改；对象数组自动提取表头；层级节点图支持深度、缩放和平移；树形视图提供代码与树联动 |
 | **诊断与修复** | 中英文错误说明、行列定位、红色波浪线；修复单引号、未引号键、尾逗号、注释等输入 |
-| **JSONPath / JQ** | 通配符、递归、数组切片定位节点；JQ 过滤、投影和转换，结果可复制、导出或替换当前内容 |
 | **结构对比** | 左右两列比较，区分新增、删除、值修改和类型变更；对象键顺序不同仍可判定相等 |
 | **类型生成** | 从样本推断 TypeScript、Python、Go、Rust 类型，本地生成，可复制或导出 |
 | **导入与导出** | 本地 UTF-8 文件选择、拖放，URL / GET cURL 导入；导出 `.json`、复制原文或格式化结果 |
@@ -111,8 +109,8 @@ npm run preview -- --host 127.0.0.1 --port 5175
 | `Mod + K` | 打开命令面板；方向键选择，Enter 执行，Esc 关闭 |
 | `Mod + Enter` | 格式化当前编辑器 |
 | `Mod + F` | 查找与替换 |
-| `Alt + B` | 开关代码 / 树形双栏 |
-| `Alt + 1 … 8` | 依次切换代码、树形、表格、节点图、JSONPath、JQ、对比、类型生成 |
+| `Alt + 1 … 4` | 依次切换代码、树形、表格、节点图 |
+| `Alt + 7` / `Alt + 8` | 对比 / 类型生成 |
 | `Alt + K` | 打开快捷键设置；检测重复键位并支持恢复默认 |
 | `Alt + H` | 打开历史记录 |
 | `Alt + N` | 新建空白标签页 |
@@ -126,14 +124,7 @@ npm run preview -- --host 127.0.0.1 --port 5175
 
 ### 复制节点路径
 
-状态栏常驻当前节点路径，右键字段或点击路径可选择复制格式：
-
-| 格式 | 示例 |
-| --- | --- |
-| JSONPath | `$.users[0].name` |
-| JavaScript | `res.users[0].name` |
-| JQ | `.users[0].name` |
-| JSON Pointer | `/users/0/name` |
+状态栏常驻当前节点路径，右键字段或点击路径后选择「复制路径」，复制 JSONPath，例如 `$.users[0].name`。
 
 <details>
 <summary><strong>设置、标签页与历史记录</strong></summary>
@@ -149,14 +140,14 @@ npm run preview -- --host 127.0.0.1 --port 5175
 
 ## 隐私与离线
 
-**未保存的 JSON 只存在于页面内存；已保存的历史记录存于此浏览器的 IndexedDB，刷新后仍可找回。** 解析、修复、查询、对比和类型生成在浏览器本地运行，不上传输入内容，不依赖第三方计算服务或 CDN。
+**未保存的 JSON 只存在于页面内存；已保存的历史记录存于此浏览器的 IndexedDB，刷新后仍可找回。** 解析、修复、对比和类型生成在浏览器本地运行，不上传输入内容，不依赖第三方计算服务或 CDN。
 
 - `localStorage` 只保存主题、语言、缩进和快捷键等偏好；离线缓存只保存应用资源。
 - 大文件在 CodeMirror 6 中按视口流式语法高亮；文件解码、换行处理及折叠索引生成在 Worker 中执行，完整内容保留，不以截断文件换取速度，跳转远处无需等待前面的语法树解析完成。
 - 历史列表仅读取标题、文件名等信息，打开记录后才加载原文；重命名不会重写大文件内容。跨标签页修改有版本检查，避免覆盖更新。
 - 历史记录不跨浏览器或设备同步，也不提供额外加密。删除记录或清除网站数据会移除保存内容；隐私模式、存储配额和浏览器清理策略可能影响保留时间，重要内容请另行导出备份。
 - 主动导入 URL，或粘贴 URL 触发智能导入时，浏览器会请求该地址；请求不附带 Cookie 和 Referrer，并受目标服务 CORS 限制。
-- 首次通过 **HTTPS 或 localhost** 打开生产版并完成资源缓存后，可断网重新访问（包括 JQ WASM）。支持安装的浏览器会显示安装入口。
+- 首次通过 **HTTPS 或 localhost** 打开生产版并完成资源缓存后，可断网重新访问。支持安装的浏览器会显示安装入口。
 - JWT 功能只解码 payload，不验证签名；Base64 为解码。修复可能推断缺失内容，规则脱敏也可能遗漏业务自定义字段，使用或分享前请核对结果。
 
 <details>
@@ -164,9 +155,11 @@ npm run preview -- --host 127.0.0.1 --port 5175
 
 数字通过原始 token 与 [`lossless-json`](https://github.com/josdejong/lossless-json) 保存，格式化和压缩不经过会丢失长整数的原生 `JSON.parse` / `JSON.stringify` 往返。结构对比不使用浮点数判断数字等值；数组按索引比较。
 
-**JQ 数值运算仍遵循 IEEE 754 浮点数语义**，不要对需要保持精度的 ID 做算术运算。类型生成来自输入样本，不能替代完整业务 schema；生成的 TypeScript `number` 也不代表下游可精确表示超大整数。
+生成代码支持 TypeScript、Python、Go、Rust 语法高亮与编辑。TypeScript 使用官方编译器检查语法和类型；其他语言检查语法，不执行编译器或外部依赖检查。类型生成来自输入样本，不能替代完整业务 schema；生成的 TypeScript `number` 也不代表下游可精确表示超大整数。
 
-编辑器仅渲染可见区域；校验、转换、查询、对比、类型生成和索引使用 Worker。连续输入合并文本快照，过期任务会被取消，避免异步结果覆盖后续编辑。
+编辑器仅渲染可见区域；校验、转换、对比、类型生成和索引使用 Worker。连续输入合并文本快照，过期任务会被取消，避免异步结果覆盖后续编辑。
+
+大文件主编辑器复用校验遍历生成的折叠索引，通过可转移的紧凑数组返回，减少一次全文复制和独立扫描。连续光标移动合并为最后一次路径请求，右键请求立即执行。单行压缩 JSON 的折叠查询会跳过整个单行子树，避免逐节点检查。
 
 | 边界 | 当前策略 |
 | --- | --- |
@@ -179,6 +172,8 @@ npm run preview -- --host 127.0.0.1 --port 5175
 重复键的树形数据只读，避免编辑路径歧义。虚拟滚动限制渲染量，但读取、解析和输出仍随数据量消耗时间与内存，无法保证任意设备处理任意输入都无等待。
 
 运行 `npm run benchmark` 可在内存中生成约 100 MiB 的合成数据，测量校验、分支浏览、表格、节点图、压缩和格式化的耗时与进程峰值内存，不生成样本文件。该测试衡量的是 Node 中的算法耗时，不是浏览器帧率。
+
+2026-10-20，在约 16 GB 内存、Ryzen 5 5500U（6 核 12 线程）的机器上，100 MiB 合成样本的校验与折叠索引由分开遍历的 3.98 秒降至共享遍历的 2.96 秒（单次测量）。Chrome 生产构建另验证了约 50 MiB、274,498 行样本的本机 URL 导入、末尾跳转、编辑撤销、折叠和保存。128 MiB 是导入上限，不是对任意数据结构、设备和操作的流畅度保证。
 
 </details>
 
@@ -230,7 +225,7 @@ curl -fsS http://127.0.0.1:8088/healthz
 3. 把 `deploy/ssh-entrypoint.sh` 安装到 `.ops/ssh-entrypoint.sh`。
 4. 在部署账户的 `authorized_keys` 中为部署公钥配置 `restrict` 和该入口的强制命令，只允许 `deploy <SHA>`，不提供交互式 Shell 或端口转发。
 
-发布策略：构建期间继续运行原容器；新版本必须通过健康检查与版本检查，失败则恢复上一镜像。流水线还会验证线上版本、JQ 模块 / WASM 和 PWA 清单的响应类型。历史镜像用于回滚，不执行影响其他项目的全局镜像清理。
+发布策略：构建期间继续运行原容器；新版本必须通过健康检查与版本检查，失败则恢复上一镜像。流水线还会验证线上版本和 PWA 清单的响应类型。历史镜像用于回滚，不执行影响其他项目的全局镜像清理。
 
 排查线上状态（在服务器部署目录中执行）：
 
@@ -252,6 +247,8 @@ HTTPS 证书可使用 Certbot 签发，并通过续期定时器与 Nginx 校验 
 
 技术栈：React 19 + TypeScript + Vite。编辑器、各视图和计算层相互分离，重计算在 Worker 中执行；快捷键、工具栏和命令面板共用 `src/lib/commands.ts`，避免同一操作维护多套定义。
 
+字段预览沿用可调整宽度的侧栏，支持图片、音视频、Markdown、PDF，以及 Univer 只读表格和 DOCX 正文。办公组件按需加载；SheetJS 和 Mammoth 在 Worker 内解析文件，不上传至转换服务。DOCX 展示正文及基础排版，不保证原文件的分页、图片和复杂样式还原；旧版 DOC 等格式保留原文件打开入口。文件 URL 需允许浏览器跨域读取；解析文件上限为 20 MiB、30 秒，表格上限为 50 个工作表、每表 10,000 行 / 256 列、总计 100,000 个已存储单元格。
+
 ```text
 src/components/   编辑器、各视图、菜单与对话框
 src/hooks/        状态同步与计算任务调度
@@ -259,7 +256,7 @@ src/lib/          JSON 算法、路径、导入、快捷键与设置
 src/workers/      本地计算任务
 tests/            功能与部署回归测试
 deploy/           Nginx 配置与发布脚本
-scripts/          JQ 本地资源准备与性能测量
+scripts/          性能测量
 docs/             README 演示动画
 ```
 
@@ -275,9 +272,10 @@ npm run build
 
 ## 致谢与许可证
 
-基于 [MIT License](LICENSE) 开源。第三方依赖保留各自许可证，JQ 本地资源的许可证随构建保留。
+基于 [MIT License](LICENSE) 开源。第三方依赖保留各自许可证。
 
 - **编辑体验**：[CodeMirror 6](https://codemirror.net/)
-- **解析与转换**：[jsonc-parser](https://github.com/microsoft/node-jsonc-parser)、[lossless-json](https://github.com/josdejong/lossless-json)、[jsonrepair](https://github.com/josdejong/jsonrepair)、[JSONPath Plus](https://jsonpath-plus.github.io/JSONPath/docs/ts/)、[jq-web](https://github.com/fiatjaf/jq-web)、[quicktype](https://github.com/glideapps/quicktype)
+- **解析与转换**：[jsonc-parser](https://github.com/microsoft/node-jsonc-parser)、[lossless-json](https://github.com/josdejong/lossless-json)、[jsonrepair](https://github.com/josdejong/jsonrepair)、[quicktype](https://github.com/glideapps/quicktype)
 - **交互与可视化**：[Base UI](https://base-ui.com/)、[cmdk](https://github.com/pacocoursey/cmdk)、[TanStack Virtual](https://tanstack.com/virtual/latest)、[React Flow](https://reactflow.dev/)，界面参考 [21st](https://21st.dev/) 的组件设计
 - **离线能力**：[Vite PWA](https://vite-pwa-org.netlify.app/)
+- **文件预览**：[Univer](https://docs.univer.ai/)、[SheetJS](https://docs.sheetjs.com/)、[Mammoth](https://github.com/mwilliamson/mammoth.js)、[PDF.js](https://mozilla.github.io/pdf.js/)、[DOMPurify](https://github.com/cure53/DOMPurify)

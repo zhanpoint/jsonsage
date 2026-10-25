@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { JsonOptions, ValidationResult } from '../lib/json/engine';
 type Metrics = { lineCount: number; characterCount: number };
-type Result = ValidationResult & { metrics?: Metrics };
+type Result = ValidationResult & { metrics?: Metrics; folds?: Uint32Array };
 type Options = Pick<JsonOptions, 'mode' | 'duplicateKeys'>;
 export function useJsonValidation(source: string, options: Options) {
   const mode = options.mode ?? 'strict'; const duplicateKeys = options.duplicateKeys ?? 'warn';
@@ -27,5 +27,5 @@ export function useJsonValidation(source: string, options: Options) {
     return () => { window.clearTimeout(timer); if (sequence.current === id) sequence.current++; worker.current?.terminate(); worker.current = null; };
   }, [source, mode, duplicateKeys]);
   const current = result?.source === source && result.mode === mode && result.duplicateKeys === duplicateKeys;
-  return { ...(current ? result.value : { ok: false, diagnostics: [] }), metrics: current ? result.value.metrics : undefined, pending: !current };
+  return { ...(current ? result.value : { ok: false, diagnostics: [] }), folds: current ? result.value.folds ?? null : null, metrics: current ? result.value.metrics : undefined, pending: !current };
 }

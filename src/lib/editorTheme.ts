@@ -8,13 +8,15 @@ export function editorTheme(dark: boolean) {
   const subtle = 'color-mix(in srgb, var(--tip-fg) 68%, transparent)';
   const wash = 'color-mix(in srgb, var(--tip-fg) 4%, var(--tip-bg))';
   return [EditorView.theme({
-    '&': { height: '420px', backgroundColor: 'var(--p-editor, var(--tip-bg))', color: 'var(--tip-fg)', fontSize: '13px' },
+    '&': { height: '100%', overflow: 'hidden', backgroundColor: 'var(--p-editor, var(--tip-bg))', color: 'var(--tip-fg)', fontSize: '13px' },
     '&.cm-focused': { outline: 'none' },
-    '.cm-scroller': { overflow: 'auto', fontFamily: '"Cascadia Code", "SFMono-Regular", Consolas, monospace', lineHeight: '24px', scrollbarWidth: 'thin', scrollbarColor: 'var(--scroll-thumb) transparent' },
+    '.cm-scroller': { overflow: 'auto', fontFamily: '"Cascadia Code", "SFMono-Regular", Consolas, monospace', lineHeight: '28px', scrollbarWidth: 'thin', scrollbarColor: 'var(--scroll-thumb) transparent' },
     '.cm-content': { padding: '18px 0', caretColor: accent },
     '.cm-line': { padding: '0 12px 0 20px' },
     '.cm-gutters': { backgroundColor: 'var(--p-editor, var(--tip-bg))', color: subtle, border: 'none', userSelect: 'none' },
-    '.cm-lineNumbers .cm-gutterElement': { minWidth: '36px', padding: '0 6px 0 12px', fontSize: '11px' },
+    '.cm-gutter-lint': { width: '14px' },
+    '.cm-gutter-lint .cm-gutterElement': { padding: '2px 1px' },
+    '.cm-lineNumbers .cm-gutterElement': { minWidth: '22px', padding: '0 4px 0 2px', fontSize: '11px' },
     '.cm-inlineFold': { display: 'inline-block', position: 'relative', width: '0', height: '0', verticalAlign: 'baseline' },
     '.cm-foldToggle': { position: 'absolute', left: '-18px', top: '-16px', width: '16px', height: '20px', padding: '0', border: 'none', borderRadius: '3px', background: 'transparent', color: subtle, cursor: 'pointer', opacity: '0', display: 'grid', placeItems: 'center' },
     '.cm-foldToggle::before': { content: '""', width: '5px', height: '5px', borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor', transform: 'rotate(-45deg)' },
@@ -57,15 +59,19 @@ export function editorTheme(dark: boolean) {
     '.cm-diagnostic-warning': { backgroundColor: 'color-mix(in srgb, #c59640 7%, transparent)' },
     '.cm-diagnosticText': { whiteSpace: 'pre-line', lineHeight: '1.7' },
     '.cm-diagnosticSource': { fontSize: '10px', color: subtle },
-    '.cm-lint-marker': { width: '7px', height: '7px', margin: '8px 3px', borderRadius: '50%', backgroundImage: 'none' },
+    '.cm-lint-marker': { width: '7px', height: '7px', margin: '8px 2px', borderRadius: '50%', backgroundImage: 'none' },
     '.cm-lint-marker-error': { backgroundColor: '#dc6574' },
     '.cm-lint-marker-warning': { backgroundColor: '#c59640' },
     '@media (max-width: 650px)': {
       '.cm-search': { paddingLeft: '10px !important', gap: '6px' },
       '.cm-textfield': { flex: '1 1 160px' },
-      '.cm-lineNumbers .cm-gutterElement': { paddingLeft: '6px', minWidth: '28px' },
+
     },
   }, { dark }), syntaxHighlighting(HighlightStyle.define([
+    { tag: [tags.keyword, tags.modifier, tags.operatorKeyword], color: dark ? '#c5b1f0' : '#8260ac' },
+    { tag: [tags.typeName, tags.className, tags.namespace], color: dark ? '#80cbc4' : '#267b78' },
+    { tag: [tags.function(tags.variableName), tags.definition(tags.variableName)], color: dark ? '#e5c885' : '#8b6518' },
+    { tag: tags.operator, color: dark ? '#b6c3d5' : '#5a6575' },
     { tag: tags.propertyName, color: dark ? '#a8c7fa' : '#435f91' },
     { tag: tags.string, color: dark ? '#a2d9b3' : '#32785a' },
     { tag: tags.number, color: dark ? '#efc18c' : '#a7662c' },

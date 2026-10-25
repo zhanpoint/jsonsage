@@ -23,5 +23,4 @@
 .guide-context h2 { font-size: 14px; margin-top: 22px; }
 .command-guide footer a { display: inline-flex; align-items: center; gap: 6px; color: inherit; font-size: 12px; text-underline-offset: 4px; }
 .command-guide footer a:hover { opacity: .7; }
-.header-control.repo-link { text-decoration: none; }
 @media (max-width: 600px) { .guide-body { padding: 0 14px 14px; } .guide-detail { padding-left: 6px; } .guide-example { grid-template-columns: 1fr; } .guide-entry summary { gap: 8px; } }

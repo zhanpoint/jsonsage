@@ -1,5 +1,7 @@
 import { jsonrepair } from 'jsonrepair';
 import { validate, type JsonOptions } from './engine';
+import { isRecordStream } from './document';
+import { minifyJson } from './transforms';
 
 export type RepairResult =
   | { ok: true; source: string; changed: boolean; commentsMoved?: boolean }
@@ -36,6 +38,17 @@ function collectComments(source: string): string[] {
 export function repairJson(source: string, options: JsonOptions = {}): RepairResult {
   if (!source.trim()) return { ok: false, source, reason: 'empty' };
   if (validate(source, options).ok) return { ok: true, source, changed: false };
+  if (isRecordStream(source)) {
+    const lines = source.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (i === lines.length - 1 && lines[i] === '') continue;
+      const repaired = repairJson(lines[i], options);
+      if (!repaired.ok) return { ok: false, source, reason: 'failed' };
+      lines[i] = minifyJson(repaired.source, options).source;
+    }
+    const output = lines.join('\n');
+    return validate(output, options).ok ? { ok: true, source: output, changed: output !== source } : { ok: false, source, reason: 'failed' };
+  }
   try {
     const parts: string[] = [];
     let quoted = '', escaped = false, start = 0;

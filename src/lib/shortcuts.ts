@@ -6,11 +6,11 @@ const modifiers = new Set(['Control', 'Meta', 'Alt', 'Shift']);
 const legacyDefaults: ShortcutMap = {
   palette: 'Mod+K', history: 'Mod+Alt+H', newHistory: 'Mod+Alt+N', saveHistory: 'Mod+Alt+S',
   shortcuts: 'Mod+Alt+K', format: 'Mod+Enter', repair: 'Mod+Alt+R', validate: 'Mod+Alt+V',
-  minify: 'Mod+Alt+M', mask: 'Mod+Alt+D', search: 'Mod+F', split: 'Mod+Alt+B', open: 'Mod+Alt+O',
+  minify: 'Mod+Alt+M', mask: 'Mod+Alt+D', search: 'Mod+F', open: 'Mod+Alt+O',
   url: 'Mod+Alt+U', copy: 'Mod+Alt+C', copyRaw: 'Mod+Alt+Shift+C', export: 'Mod+Alt+E',
   undo: 'Mod+Z', redo: 'Mod+Shift+Z', unescape: 'Mod+Alt+Shift+Q', escape: 'Mod+Alt+Q',
   code: 'Mod+Alt+1', tree: 'Mod+Alt+2', table: 'Mod+Alt+3', graph: 'Mod+Alt+4',
-  query: 'Mod+Alt+5', jq: 'Mod+Alt+6', diff: 'Mod+Alt+7', types: 'Mod+Alt+8', install: 'Mod+Alt+I',
+  diff: 'Mod+Alt+7', types: 'Mod+Alt+8', install: 'Mod+Alt+I',
 };
 /** Physical key codes keep shortcuts stable across keyboard layouts and shifted digits. */
 export function shortcutFromEvent(event: KeyEvent): string | null {

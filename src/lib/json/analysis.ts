@@ -1,5 +1,4 @@
-import { JSONPath } from 'jsonpath-plus';
-import { visit } from 'jsonc-parser';
+import { visitDocument as visit } from './document';
 import { isLosslessNumber } from 'lossless-json';
 import { numberKey } from './numbers';
 import { parse } from './engine';
@@ -7,12 +6,11 @@ import { pathText } from './views';
 import type { AdvancedRequest, AdvancedResult } from './advanced';
 
 export const RESULT_LIMIT = 5000;
-type QueryRow = { path: string; value: string };
 type DiffRow = { path: string; kind: 'CREATE' | 'REMOVE' | 'CHANGE' | 'TYPE'; before: string; after: string };
 export type DiffHighlight = { from: number; to: number; kind: DiffRow['kind'] };
-export type BasicRequest = { kind: 'query'; source: string; expression: string; jsonc: boolean } | { kind: 'diff'; source: string; other: string; jsonc: boolean };
+export type BasicRequest = { kind: 'diff'; source: string; other: string; jsonc: boolean };
 export type AnalysisRequest = BasicRequest | AdvancedRequest;
-export type AnalysisResult = { kind: 'query'; rows: QueryRow[]; truncated: boolean } | { kind: 'diff'; rows: DiffRow[]; total: number; left: DiffHighlight[]; right: DiffHighlight[] } | AdvancedResult;
+export type AnalysisResult = { kind: 'diff'; rows: DiffRow[]; total: number; left: DiffHighlight[]; right: DiffHighlight[] } | AdvancedResult;
 
 function highlights(source: string, rows: DiffRow[], side: 'left' | 'right'): DiffHighlight[] {
   const paths = new Map(rows.filter(row => row.kind !== (side === 'left' ? 'CREATE' : 'REMOVE')).map(row => [row.path, row.kind]));
@@ -52,26 +50,6 @@ export function preview(value: unknown, depth = 0): string {
 
 export function analyze(request: BasicRequest): Exclude<AnalysisResult, AdvancedResult> {
   const value = read(request.source, request.jsonc);
-  if (request.kind === 'query') {
-    if (!request.expression.trim().startsWith('$')) throw new Error('INVALID_PATH');
-    const rows: QueryRow[] = [];
-    const limit = new Error('RESULT_LIMIT');
-    let truncated = false;
-    try {
-      // JSONPath Plus rejects falsy root inputs. A single-element root adapter
-      // supports every JSON root without copying data or exposing the adapter.
-      const rootPath = '$[0]';
-      JSONPath({ path: rootPath + request.expression.trim().slice(1), json: [value], resultType: 'all', eval: false, callback: (result: { path: string; value: unknown }) => {
-        if (!result.path.startsWith(rootPath)) return;
-        if (rows.length === RESULT_LIMIT) throw limit;
-        rows.push({ path: '$' + result.path.slice(rootPath.length), value: preview(result.value) });
-      } });
-    } catch (error) {
-      if (error === limit) truncated = true;
-      else throw error;
-    }
-    return { kind: 'query', rows, truncated };
-  }
   const other = read(request.other, request.jsonc);
   const rows: DiffRow[] = [];
   let total = 0;

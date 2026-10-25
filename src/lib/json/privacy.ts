@@ -1,4 +1,4 @@
-import { visit } from 'jsonc-parser';
+import { visitDocument as visit } from './document';
 import { validate, type JsonOptions } from './engine';
 
 // Luhn avoids masking arbitrary numbers that merely look like card numbers.

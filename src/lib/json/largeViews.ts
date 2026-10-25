@@ -1,4 +1,4 @@
-import { visit } from 'jsonc-parser';
+import { visitDocument as visit } from './document';
 import { findPathOffset, BRANCH_PAGE_SIZE } from './branches';
 import { type JsonPath } from './views';
 export type GraphItem = { id: string; parent?: string; depth: number; path: JsonPath; type: string; preview: string };

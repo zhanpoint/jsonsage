@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { Copy } from 'lucide-react';
-import { formatPath, pathFormats } from '../lib/paths';
+import { Copy, BookOpen } from 'lucide-react';
 import { pathText, type JsonPath } from '../lib/json/views';
 
 export type PathMenuTarget = { x: number; y: number; path: JsonPath };
 
-export function PathMenu({ target, language, onClose, onCopy }: {
+export function PathMenu({ target, language, onClose, onCopy, onPreview }: {
   target: PathMenuTarget; language: 'zh' | 'en'; onClose: () => void; onCopy: (path: string) => Promise<void>;
+  onPreview: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const origin = useRef(document.activeElement as HTMLElement | null);
@@ -41,6 +41,7 @@ export function PathMenu({ target, language, onClose, onCopy }: {
   }, [onClose]);
   return <div ref={ref} className="path-menu" role="menu" aria-label="JSONPath" onContextMenu={event => event.preventDefault()}>
     <code title={pathText(target.path)}>{pathText(target.path)}</code>
-    {pathFormats.map(format => <button key={format} role="menuitem" onClick={() => { void onCopy(formatPath(target.path, format)); onClose(); }}><Copy size={14} />{language === 'zh' ? '复制' : 'Copy'} {{ jsonpath: 'JSONPath', javascript: 'JavaScript', jq: 'JQ', pointer: 'JSON Pointer' }[format]}</button>)}
+    <button role="menuitem" onClick={() => { origin.current?.focus({ preventScroll: true }); onPreview(); onClose(); }}><BookOpen size={14} />{language === 'zh' ? '预览' : 'Preview'}</button>
+    <button role="menuitem" onClick={() => { void onCopy(pathText(target.path)); onClose(); }}><Copy size={14} />{language === 'zh' ? '复制路径' : 'Copy path'}</button>
   </div>;
 }

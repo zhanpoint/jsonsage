@@ -1,5 +1,6 @@
-import { applyEdits, getNodePath, modify, parseTree, type Node } from 'jsonc-parser';
-import { beautifyJson, indentationOptions, type Indent } from './transforms';
+import { applyEdits, getNodePath, modify, type Node } from 'jsonc-parser';
+import { parseDocumentTree, documentSource, isRecordStream } from './document';
+import { beautifyJson, minifyJson, indentationOptions, type Indent } from './transforms';
 import { validate, type JsonOptions } from './engine';
 
 export type JsonPath = (string | number)[];
@@ -11,7 +12,7 @@ export function pathText(path: JsonPath): string {
     : /^[A-Za-z_$][\w$]*$/.test(part) ? `${text}.${part}` : `${text}[${JSON.stringify(part)}]`, '$');
 }
 export function documentTree(source: string, jsonc: boolean) {
-  return parseTree(source, [], { allowTrailingComma: jsonc, disallowComments: !jsonc });
+  return parseDocumentTree(source, { allowTrailingComma: jsonc, disallowComments: !jsonc });
 }
 /** Access children without allocating a second array for every object. */
 export function valueChild(node: Node, index: number): Node {
@@ -48,7 +49,7 @@ export function pathAtOffset(root: Node, offset: number): JsonPath {
   }
   return path;
 }
-export function flattenTree(root: Node, expanded: ReadonlySet<number>, limit = VISIBLE_LIMIT): { rows: ViewRow[]; truncated: boolean } {
+export function flattenTree(root: Node, expanded: Pick<ReadonlySet<number>, 'has'>, limit = VISIBLE_LIMIT): { rows: ViewRow[]; truncated: boolean } {
   const rows: ViewRow[] = [];
   for (const row of walkValues(root, node => expanded.has(node.offset))) {
     if (rows.length === limit) return { rows, truncated: true };
@@ -99,9 +100,21 @@ export function tableHeaders(array: Node, limit = 100): { headers: string[]; tru
 
 /** Splice raw JSON values rather than round-tripping the document through JS numbers. */
 export function editNode(source: string, node: Node, operation: 'replace' | 'add' | 'delete', raw: string, key: string, indent: Indent, options: JsonOptions): string {
+  if (isRecordStream(source)) {
+    // Reuse ordinary JSON editing against the virtual array, then serialize each
+    // record independently. Source numeric tokens never pass through JS numbers.
+    const { text } = documentSource(source);
+    const path = getNodePath(node);
+    let target = documentTree(text, false)!;
+    for (const part of path) target = typeof part === 'number' ? target.children![part] : target.children!.find(p => p.children![0].value === part)!.children![1];
+    const edited = editNode(text, target, operation, raw, key, indent, options);
+    const tree = documentTree(edited, false)!;
+    if (tree.type !== 'array') return edited;
+    return tree.children!.map(child => minifyJson(edited.slice(child.offset, child.offset + child.length), options).source).join('\n') + (source.endsWith('\n') ? '\n' : '');
+  }
   let next: string;
   if (operation === 'replace') {
-    if (!validate(raw, options).ok) throw new Error('INVALID_VALUE');
+    if (isRecordStream(raw) || !validate(raw, options).ok) throw new Error('INVALID_VALUE');
     next = source.slice(0, node.offset) + raw + source.slice(node.offset + node.length);
   } else {
     if (operation === 'delete' && !node.parent) throw new Error('ROOT_DELETE');
@@ -110,7 +123,7 @@ export function editNode(source: string, node: Node, operation: 'replace' | 'add
     const format = { ...indentationOptions(indent), eol: '\n' };
     if (operation === 'delete') next = applyEdits(source, modify(source, path, undefined, { formattingOptions: format }));
     else {
-      if (!validate(raw, options).ok) throw new Error('INVALID_VALUE');
+      if (isRecordStream(raw) || !validate(raw, options).ok) throw new Error('INVALID_VALUE');
       if (node.type === 'object' && (node.children ?? []).some(p => p.children![0].value === key)) throw new Error('DUPLICATE_KEY');
       const targetPath = [...path, node.type === 'array' ? (node.children?.length ?? 0) : key];
       // Insert a placeholder, then replace its token with raw source, preserving large numbers and comments.

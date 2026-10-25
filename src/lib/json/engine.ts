@@ -1,5 +1,7 @@
-import { visit, createScanner, printParseErrorCode, type ParseError } from 'jsonc-parser';
+import { createScanner, printParseErrorCode, type ParseError } from 'jsonc-parser';
+import { visitDocument as visit } from './document';
 import { LosslessNumber, isLosslessNumber, isSafeNumber } from 'lossless-json';
+import { createFoldIndex } from './foldIndex';
 
 type JsonMode = 'strict' | 'jsonc';
 type DiagnosticSeverity = 'error' | 'warning';
@@ -130,7 +132,7 @@ function scan(source: string, options: JsonOptions): { normalized: string; diagn
   return { normalized: parts.join(''), diagnostics: diagnostics.slice(0, MAX_DIAGNOSTICS) };
 }
 
-function run(input: JsonInput, options: JsonOptions, deserialize = true): ParseResult {
+function run(input: JsonInput, options: JsonOptions, deserialize = true, folds?: ReturnType<typeof createFoldIndex>): ParseResult {
   const { source, diagnostics: decodeDiagnostics } = decode(input);
   const { normalized, diagnostics } = scan(source, options);
   const all = [...decodeDiagnostics, ...diagnostics];
@@ -139,8 +141,10 @@ function run(input: JsonInput, options: JsonOptions, deserialize = true): ParseR
   const syntaxErrors: ParseError[] = [];
   const objectKeys: Array<Map<string, { start: number; end: number }>> = [];
   visit(normalized, {
-    onObjectBegin: () => { objectKeys.push(new Map()); },
-    onObjectEnd: () => { objectKeys.pop(); },
+    onObjectBegin: offset => { objectKeys.push(new Map()); folds?.begin(offset); },
+    onObjectEnd: offset => { objectKeys.pop(); folds?.end(offset); },
+    onArrayBegin: folds?.begin,
+    onArrayEnd: folds?.end,
     onObjectProperty: (key, start, length) => {
       if (options.duplicateKeys === 'allow') return;
       const scope = objectKeys.at(-1);
@@ -234,6 +238,13 @@ function readTokens(source: string, options: JsonOptions): unknown {
 export function validate(input: JsonInput, options: JsonOptions = {}): ValidationResult {
   const { ok, diagnostics } = run(input, options, false);
   return { ok, diagnostics };
+}
+
+/** Reuse the validation traversal; normalized text preserves original token offsets. */
+export function validateIndexed(source: string, options: JsonOptions = {}) {
+  const index = createFoldIndex();
+  const { ok, diagnostics } = run(source, options, false, index);
+  return { ok, diagnostics, folds: index.finish() };
 }
 
 /** Resolve sorted diagnostic positions with one scan, away from the rendering thread. */

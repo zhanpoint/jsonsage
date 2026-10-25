@@ -1,3 +1,4 @@
+import { documentSource } from '../lib/json/document';
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -8,10 +9,12 @@ import type { JsonOptions } from '../lib/json/engine';
 import { HelpTooltip } from './ui/HelpTooltip';
 import { TreeBranches, TreeNode, TREE_INDENT, TREE_MAX_DEPTH, TREE_ROW_HEIGHT } from './TreeNode';
 const GraphView = lazy(() => import('./GraphView'));
+export type TreeFoldRequest = { id: number; folded: boolean };
 export type StructuredProps = {
   root: Node; source: string; view: 'tree' | 'table' | 'graph'; language: 'zh' | 'en';
   indent: Indent; options: JsonOptions; editable: boolean;
   selectedPath?: JsonPath; onSelect?: (node: Node, path: JsonPath, focusEditor?: boolean) => void;
+  treeFold?: TreeFoldRequest | null;
   onChange: (source: string) => void; onContextPath: (event: React.MouseEvent, path: JsonPath) => void;
 };
 
@@ -19,9 +22,11 @@ export default memo(function StructuredViews(props: StructuredProps) {
   if (props.view === 'graph') return <Suspense fallback={<div className="view-message">{props.language === 'zh' ? '正在加载节点图…' : 'Loading graph…'}</div>}><GraphView root={props.root} source={props.source} onContextPath={props.onContextPath} language={props.language} /></Suspense>;
   return props.view === 'tree' ? <TreeView {...props} /> : <TableView {...props} />;
 });
-function TreeView({ root, source, language, indent, options, editable, onChange, onContextPath, selectedPath, onSelect }: StructuredProps) {
+function TreeView({ root, source, language, indent, options, editable, onChange, onContextPath, selectedPath, onSelect, treeFold }: StructuredProps) {
   const zh = language === 'zh';
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set([root.offset]));
+  const [allExpanded, setAllExpanded] = useState(false);
+  useEffect(() => { if (treeFold) { setAllExpanded(!treeFold.folded); setExpanded(new Set()); } }, [treeFold]);
   const [editing, setEditing] = useState<{ row: ViewRow; operation: 'replace' | 'add' | 'delete' } | null>(null);
   const [raw, setRaw] = useState('');
   const [key, setKey] = useState('');
@@ -33,7 +38,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
     dialogRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea')?.focus();
   }, [editing]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { rows, truncated } = useMemo(() => flattenTree(root, expanded), [root, expanded]);
+  const { rows, truncated } = useMemo(() => flattenTree(root, { has: offset => allExpanded !== expanded.has(offset) }), [root, expanded, allExpanded]);
   const virtual = useVirtualizer({ count: rows.length, getScrollElement: () => scrollRef.current, estimateSize: () => TREE_ROW_HEIGHT, overscan: 8 });
   const selectedNode = selectedPath ? findNodeAtLocation(root, selectedPath) : undefined;
   const selectedIndex = Math.max(0, rows.findIndex(row => row.node === selectedNode));
@@ -43,7 +48,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
     if (!selectedNode) return;
     setExpanded(previous => {
       const next = new Set(previous);
-      for (let parent = selectedNode.parent; parent; parent = parent.parent) if (isContainer(parent)) next.add(parent.offset);
+      for (let parent = selectedNode.parent; parent; parent = parent.parent) if (isContainer(parent)) { if (allExpanded) next.delete(parent.offset); else next.add(parent.offset); }
       return next.size === previous.size ? previous : next;
     });
   }, [selectedNode]);
@@ -54,7 +59,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
   }, [selectedNode, rows, virtual]);
   function open(row: ViewRow, operation: 'replace' | 'add' | 'delete') {
     setEditing({ row, operation }); setError(''); setKey('');
-    setRaw(operation === 'replace' ? source.slice(row.node.offset, row.node.offset + row.node.length) : 'null');
+    setRaw(operation === 'replace' ? row.node.offset < 0 ? documentSource(source).text : source.slice(row.node.offset, row.node.offset + row.node.length) : 'null');
   }
   function toggle(row: ViewRow) {
     setExpanded(previous => { const next = new Set(previous); next.has(row.node.offset) ? next.delete(row.node.offset) : next.add(row.node.offset); return next; });
@@ -67,7 +72,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
     if (!editing) return;
     try {
       const next = editNode(source, editing.row.node, editing.operation, raw, key, indent, options);
-      onChange(next); setEditing(null); setExpanded(new Set([root.offset]));
+      onChange(next); setEditing(null); setAllExpanded(false); setExpanded(new Set([root.offset]));
     } catch (cause) {
       const code = cause instanceof Error ? cause.message : '';
       setError(code === 'DUPLICATE_KEY' ? (zh ? '字段名已存在。' : 'This key already exists.') : (zh ? '请输入符合当前 JSON/JSONC 模式的值。' : 'Enter a valid value for the current JSON/JSONC mode.'));
@@ -78,7 +83,7 @@ function TreeView({ root, source, language, indent, options, editable, onChange,
     <div className="tree-scroll" ref={scrollRef} role="tree" aria-label={zh ? 'JSON 节点树' : 'JSON tree'}>
       <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>
         {virtual.getVirtualItems().map(item => {
-          const row = rows[item.index]; const container = isContainer(row.node); const openState = expanded.has(row.node.offset);
+          const row = rows[item.index]; const container = isContainer(row.node); const openState = allExpanded !== expanded.has(row.node.offset);
           const expandable = container && !!row.node.children?.length;
           return <div key={row.id} className="tree-row" data-tree-index={item.index} role="treeitem" aria-selected={row.node === selectedNode} aria-level={row.depth + 1} aria-expanded={container ? openState : undefined} tabIndex={item.index === selectedIndex ? 0 : -1}
             style={{ position: 'absolute', top: 0, transform: `translateY(${item.start}px)`, height: item.size, width: '100%', paddingLeft: 12 + Math.min(row.depth, TREE_MAX_DEPTH) * TREE_INDENT }}

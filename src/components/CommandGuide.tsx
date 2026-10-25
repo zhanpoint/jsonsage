@@ -22,7 +22,7 @@ export default function CommandGuide({ commands, language, onClose }: { commands
     <header><BookOpen size={18} /><strong id="command-guide-title">{zh ? '命令使用指南' : 'Command guide'}</strong><button className="tool-button" onClick={onClose} aria-label={zh ? '关闭文档' : 'Close guide'}><X size={18} /></button></header>
     <div className="guide-body">
       <p className="guide-lead">{zh ? '从左到右，认识工具栏的七个操作。点击条目查看机制与示例。' : 'Seven toolbar actions, from left to right. Expand an action for details and examples.'}</p>
-      <p className="guide-workflow">{zh ? '常用流程：校验 → 按需修复 → 格式化 → 分享前脱敏。' : 'Typical workflow: validate → repair if needed → format → mask before sharing.'}</p>
+      <p className="guide-workflow">{zh ? '常用流程：校验 → 按需修复 → 美化 → 分享前脱敏。' : 'Typical workflow: validate → repair if needed → format → mask before sharing.'}</p>
       {guide.map(item => {
         const command = commands.find(command => command.id === item.id)!;
         const [purpose, mechanism, note] = item[language];

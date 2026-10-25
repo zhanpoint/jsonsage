@@ -4,7 +4,6 @@ dist/
 *.tgz
 *.log
 .DS_Store
-public/vendor/
 .env
 .ops/
 .21st/

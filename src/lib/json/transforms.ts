@@ -1,5 +1,6 @@
 import { applyEdits, createScanner, format } from 'jsonc-parser';
 import { validate, type JsonOptions } from './engine';
+import { isRecordStream } from './document';
 
 // jsonc-parser's documented token IDs; its ambient const enum cannot be used
 // with this project's isolatedModules compilation setting.
@@ -55,6 +56,7 @@ function formatLarge(source: string, indent: Indent): string {
 /** Token-based edits preserve numeric literals, duplicate keys and string whitespace. */
 export function beautifyJson(source: string, indent: Indent = '2', options: JsonOptions = {}): TransformResult {
   if (!validate(source, options).ok) return { ok: false, source };
+  if (isRecordStream(source)) return { ok: true, source: source.split('\n').map(line => applyEdits(line, format(line, undefined, { ...indentationOptions(indent), keepLines: true }))).join('\n') };
   if (source.length > 2_000_000) return { ok: true, source: formatLarge(source, indent) };
   const output = applyEdits(source, format(source, undefined, {
     ...indentationOptions(indent), eol: '\n',
@@ -64,6 +66,7 @@ export function beautifyJson(source: string, indent: Indent = '2', options: Json
 
 export function minifyJson(source: string, options: JsonOptions = {}): TransformResult {
   if (!validate(source, options).ok) return { ok: false, source };
+  if (isRecordStream(source)) return { ok: true, source: source.split('\n').map(line => line.trim() ? minifyJson(line, options).source : line).join('\n') };
   const scanner = createScanner(source);
   const output = textWriter();
   for (let token = scanner.scan(); token !== tokens.eof; token = scanner.scan()) {

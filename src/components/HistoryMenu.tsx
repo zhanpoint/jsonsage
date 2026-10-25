@@ -59,7 +59,7 @@ export default function HistoryMenu(props: Props) {
   return <Popover.Root open={open} onOpenChange={onOpenChange}>
     <HelpTooltip label={`${text('历史记录', 'History')} · ${props.shortcut}`}><Popover.Trigger ref={(node: HTMLElement | null) => { container.current = node?.closest<HTMLElement>('.app-shell') ?? null; }} className="record-icon history-trigger" aria-label={text('历史记录', 'History')}><History size={17} /></Popover.Trigger></HelpTooltip>
     <Popover.Portal container={container}><Popover.Positioner className="history-positioner" side="bottom" align="end" sideOffset={7} collisionPadding={12}><Popover.Popup className="history-dropdown" aria-label={text('历史记录', 'History')}>
-      <div className="history-search"><Search size={15} /><input type="search" aria-label={text('搜索历史记录', 'Search history')} placeholder={text('搜索标题或文件名…', 'Search title or filename…')} value={search} onChange={event => setSearch(event.target.value)} autoFocus /></div>
+      <div className="history-search"><Search size={15} /><input type="search" aria-label={text('搜索历史记录', 'Search history')} placeholder={text('搜索文件名…', 'Search filename…')} value={search} onChange={event => setSearch(event.target.value)} autoFocus /></div>
       <div className="history-results" ref={list} aria-busy={loading} style={{ height: Math.max(80, virtual.getTotalSize() + (next ? 36 : 0)) }}>
         <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>{virtual.getVirtualItems().map(item => {
           const row = rows[item.index];

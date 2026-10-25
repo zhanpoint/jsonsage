@@ -4,19 +4,21 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/prepare-vendor.mjs",
-    "prebuild": "node scripts/prepare-vendor.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:unused": "knip --no-progress",
     "benchmark": "node --expose-gc --import tsx scripts/benchmark.ts",
-    "test": "tsx tests/engine.test.ts && tsx tests/repair.test.ts && tsx tests/transforms.test.ts && tsx tests/views.test.ts && tsx tests/codeEditor.test.ts && tsx tests/analysis.test.ts && tsx tests/features.test.ts && tsx tests/shortcuts.test.ts && tsx tests/importDocument.test.ts && tsx tests/history.test.ts"
+    "test": "tsx tests/engine.test.ts && tsx tests/repair.test.ts && tsx tests/transforms.test.ts && tsx tests/views.test.ts && tsx tests/codeEditor.test.ts && tsx tests/analysis.test.ts && tsx tests/features.test.ts && tsx tests/shortcuts.test.ts && tsx tests/importDocument.test.ts && tsx tests/history.test.ts && tsx tests/textPreview.test.tsx && tsx tests/generatedCode.test.ts && tsx tests/recordStream.test.ts && tsx tests/resourcePreview.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-go": "^6.0.1",
+    "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/lang-rust": "^6.0.2",
     "@codemirror/language": "^6.12.4",
     "@codemirror/legacy-modes": "6.5.1",
     "@codemirror/lint": "^6.9.7",
@@ -25,19 +27,30 @@
     "@codemirror/view": "^6.43.13",
     "@lezer/highlight": "^1.2.5",
     "@tanstack/react-virtual": "^3.14.13",
+    "@univerjs/preset-docs-core": "1.1.0",
+    "@univerjs/preset-sheets-core": "1.1.0",
+    "@univerjs/presets": "1.1.0",
     "@xyflow/react": "^12.12.0",
     "cmdk": "^1.1.1",
+    "dompurify": "3.4.17",
     "idb": "^8.0.4",
-    "jq-web": "^0.6.2",
     "jsonc-parser": "^3.3.1",
-    "jsonpath-plus": "^11.1.1",
     "jsonrepair": "^3.15.0",
+    "katex": "^0.19.0",
     "lossless-json": "^4.3.1",
     "lucide-react": "^0.468.0",
+    "mammoth": "1.12.2",
+    "pdfjs-dist": "6.4.299",
     "quicktype-core": "^26.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "shell-quote": "^1.12.0"
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "shell-quote": "^1.12.0",
+    "typescript": "~5.9.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -47,8 +60,11 @@
     "fake-indexeddb": "^6.2.5",
     "knip": "^6.39.0",
     "tsx": "^4.20.5",
-    "typescript": "~5.9.2",
     "vite": "^7.3.6",
-    "vite-plugin-pwa": "^1.3.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "vite-plugin-static-copy": "4.1.1"
+  },
+  "overrides": {
+    "katex": "$katex"
   }
 }

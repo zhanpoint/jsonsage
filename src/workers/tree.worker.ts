@@ -1,4 +1,4 @@
-import { visit } from 'jsonc-parser';
+import { visitDocument as visit } from '../lib/json/document';
 import { documentTree } from '../lib/json/views';
 self.onmessage = (event: MessageEvent<{ id: number; source: string; jsonc: boolean }>) => {
   const { id, source, jsonc } = event.data;

@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
-import { validate } from '../src/lib/json/engine';
+import { validate, validateIndexed } from '../src/lib/json/engine';
+import { indexJsonFolds } from '../src/lib/json/foldIndex';
 import { branch } from '../src/lib/json/branches';
 import { largeGraph, largeTable } from '../src/lib/json/largeViews';
 import { beautifyJson, minifyJson } from '../src/lib/json/transforms';
@@ -15,6 +16,8 @@ function measure(name: string, work: () => void) {
   global.gc?.();
 }
 measure('validate', () => { if (!validate(source).ok) throw new Error('Invalid fixture'); });
+measure('validate+separate-folds', () => { if (!validate(source).ok) throw new Error('Invalid fixture'); indexJsonFolds(source); });
+measure('validate+shared-folds', () => { const result = validateIndexed(source); if (!result.ok || result.folds.length !== (rows + 2) * 2) throw new Error('Invalid shared index'); });
 measure('branch', () => { if (branch(source, ['items']).rows.length !== 300) throw new Error('Branch failed'); });
 measure('table', () => { if (largeTable(source, ['items'], 0).total !== rows) throw new Error('Table failed'); });
 measure('graph', () => { if (largeGraph(source, 3).items.length !== 300) throw new Error('Graph failed'); });

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, CircleAlert, Copy, Code2, FileJson2, Globe2, Moon, Palette, Sun, Command, MonitorDown, BookOpen, Github } from 'lucide-react';
+import { Check, ChevronDown, CircleAlert, BookOpen, Code2, Globe2, Moon, Palette, Sun, Command, MonitorDown, PanelRight, Github, ChevronsUp, ChevronsDown } from 'lucide-react';
 import { lineColumn as position, type JsonDiagnostic } from './lib/json/engine';
+import { isRecordStream } from './lib/json/document';
 import { type Indent } from './lib/json/transforms';
 import { useJsonTransform } from './hooks/useJsonTransform';
 import type { EditorHandle, HistoryState } from './components/CodeEditor';
@@ -15,12 +16,17 @@ const CommandPalette = lazy(() => import('./components/CommandPalette'));
 const AnalysisTools = lazy(() => import('./components/AnalysisTools'));
 const RemoteImport = lazy(() => import('./components/RemoteImport'));
 const CodeEditor = lazy(() => import('./components/CodeEditor'));
+const TextPreview = lazy(() => import('./components/TextPreview'));
 import DataView from './components/DataView';
+import PathBreadcrumbs from './components/PathBreadcrumbs';
+import EditorViewport from './components/EditorViewport';
+import PreviewWorkspace from './components/PreviewWorkspace';
+import type { TreeFoldRequest } from './components/StructuredViews';
 import './views.css';
 import { PathMenu, type PathMenuTarget } from './components/PathMenu';
 import { MAX_IMPORT_BYTES } from './lib/importDocument';
 import { EditorSettings } from './components/EditorSettings';
-import { commandDefinitions, viewOrder, viewTabs, type CommandId } from './lib/commands';
+import { commandDefinitions, viewTabs, type CommandId } from './lib/commands';
 import { shortcutLabel } from './lib/shortcuts';
 import { useShortcuts, useCommandKeyboard } from './hooks/useShortcuts';
 import { CommandButton } from './components/ui/CommandButton';
@@ -40,9 +46,7 @@ type Theme = 'light' | 'dark';
 const palettes = [
   { id: 'default', en: 'Original', zh: '经典', swatch: '#596bdf' },
   { id: 'zen-linen', en: 'Zen Linen', zh: '亚麻', swatch: '#2e2e2e' },
-  { id: 'amber-slate', en: 'Amber Slate', zh: '岩橘', swatch: '#df6035' },
   { id: 'nature', en: 'Nature', zh: '自然', swatch: '#2e7d32' },
-  { id: 'ocean-breeze', en: 'Ocean Breeze', zh: '海风', swatch: '#22c55e' },
 ] as const;
 type PaletteId = typeof palettes[number]['id'];
 
@@ -58,7 +62,7 @@ const messages = {
     transformed: 'Text updated.', unescapeFailed: 'Invalid escaped string. Original text unchanged.',
     unchanged: 'Already valid in the current mode; no repair needed.', repairFailed: 'Repair failed. Your original text is unchanged.',
     editor: 'JSON editor', file: 'Filename', mode: 'Enable JSONC mode', format: 'Format', copy: 'Copy', copied: 'Copied', open: 'Open', export: 'Export',
-    source: 'JSON source', utf8: 'UTF-8', lines: 'lines', chars: 'chars', lineShort: 'Ln', columnShort: 'Col', shortcut: 'to format',
+    source: 'JSON source', utf8: 'UTF-8', lines: 'lines', chars: 'chars', lineShort: 'Ln', columnShort: 'Col',
     issuesTab: 'Issues',
     good: 'Everything looks good',
     importFailed: 'Unable to read the file. Please choose it again.', tooLarge: 'Import supports files up to 128 MiB.', copyFailed: 'Could not copy. Check clipboard permissions.', errors: 'errors', warnings: 'warnings',
@@ -86,8 +90,8 @@ const messages = {
     commentsMoved: '已按 JSONC 修复，注释保留并集中到文件顶部，请检查结果。',
     transformed: '已更新文本。', unescapeFailed: '转义字符串无效，已保留原文。',
     unchanged: '当前模式下内容已合法，无需修复。', repairFailed: '修复失败，已保留原文。',
-    editor: 'JSON 编辑器', file: '文件名', mode: '启用 JSONC 模式', format: '格式化', copy: '复制', copied: '已复制', open: '打开', export: '导出',
-    source: 'JSON 源码', utf8: 'UTF-8', lines: '行', chars: '字符', lineShort: '第', columnShort: '列', shortcut: '格式化',
+    editor: 'JSON 编辑器', file: '文件名', mode: '启用 JSONC 模式', format: '美化', copy: '复制', copied: '已复制', open: '打开', export: '导出',
+    source: 'JSON 源码', utf8: 'UTF-8', lines: '行', chars: '字符', lineShort: '第', columnShort: '列',
     issuesTab: '问题',
     good: '内容正确',
     importFailed: '文件读取失败，请重新选择文件。', tooLarge: '支持导入 128 MiB 以内的文件。', copyFailed: '复制失败，请检查剪贴板权限。', errors: '个错误', warnings: '个警告',
@@ -156,7 +160,7 @@ export default function App() {
     if (saved === 'zh' || saved === 'en') return saved;
     return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
   });
-  const [theme, setTheme] = useState<Theme>(() => localStorage.getItem('jsonsage-theme') === 'dark' ? 'dark' : 'light');
+  const [theme, setTheme] = useState<Theme>(() => localStorage.getItem('jsonsage-theme') === 'light' ? 'light' : 'dark');
   const [palette, setPalette] = useState<PaletteId>(() => {
     const saved = localStorage.getItem('jsonsage-palette');
     return palettes.find((item) => item.id === saved)?.id ?? 'default';
@@ -209,19 +213,20 @@ export default function App() {
   const documentIds = useMemo(() => documents.tabs.map(tab => tab.id), [documents.tabs]);
   const { source, fileName, jsonc } = documentHistory.draft!;
   const setSource = useCallback((source: string) => session.change({ source }), [session]);
-  const setFileName = (fileName: string) => {
-    const value = session.snapshot().draft!;
-    session.change({ fileName, title: value.title === newHistoryDraft(value).title ? newHistoryDraft({ ...value, fileName }).title : value.title });
+  const renameTab = (id: string, fileName: string) => {
+    const target = documents.tabs.find(tab => tab.id === id)?.session;
+    const value = target?.snapshot().draft;
+    if (!target || !value) return;
+    target.change({ fileName, title: value.title === newHistoryDraft(value).title ? newHistoryDraft({ ...value, fileName }).title : value.title });
   };
   const setJsonc = (jsonc: boolean) => session.change({ jsonc });
   const fileLoadSequence = useRef(0);
   useEffect(() => () => { fileLoadSequence.current++; }, []);
-  const { view, compareSource, queryExpression, jqExpression, split } = active.tools;
+  const { view, compareSource } = active.tools;
   const setView = (view: DocumentView) => workspace.updateTools(active.id, { view });
   const setCompareSource = (compareSource: string) => workspace.updateTools(active.id, { compareSource });
-  const setQueryExpression = (queryExpression: string) => workspace.updateTools(active.id, { queryExpression });
-  const setJqExpression = (jqExpression: string) => workspace.updateTools(active.id, { jqExpression });
-  const setSplit = (value: boolean | ((previous: boolean) => boolean)) => workspace.updateTools(active.id, { split: typeof value === 'function' ? value(split) : value });
+  const [treeFold, setTreeFold] = useState<TreeFoldRequest | null>(null);
+  function foldViews(folded: boolean) { inputRef.current?.setFolded(folded); setTreeFold(previous => ({ folded, id: (previous?.id ?? 0) + 1 })); }
   const [commandOpen, setCommandOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -234,6 +239,9 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [pathMenu, setPathMenu] = useState<PathMenuTarget | null>(null);
+  const [textPreview, setTextPreview] = useState<{ path: JsonPath } | null>(null);
+  const openTextPreview = (path: JsonPath) => setTextPreview({ path });
+  useEffect(() => { setTextPreview(null); }, [active.id]);
   const openPathMenu = useCallback((event: { clientX: number; clientY: number; preventDefault: () => void }, path: JsonPath) => {
     event.preventDefault();
     setPathMenu({ x: event.clientX, y: event.clientY, path });
@@ -266,6 +274,7 @@ export default function App() {
   const structure = useDocumentTree(!parsed.pending && parsed.ok && source.length <= STRUCTURE_LIMIT ? source : null, jsonc);
   const root = structure.root;
   const cursor = useCursorPath(source, root);
+  useEffect(() => { setTextPreview(previous => previous ? { ...previous, path: cursor.path } : null); }, [cursor.path]);
   const pasteWorker = useRef<Worker | null>(null);
   useEffect(() => () => pasteWorker.current?.terminate(), []);
   const diagnostics = useMemo(() => parsed.pending ? [] : parsed.diagnostics.map(item => ({ ...item, ...localizedDiagnostic(item, language) })), [parsed.pending, parsed.diagnostics, language]);
@@ -327,7 +336,7 @@ export default function App() {
   const warnings = parsed.diagnostics.filter((item) => item.severity === 'warning');
   const lineCount = parsed.metrics?.lineCount ?? '…';
   const characterCount = parsed.metrics?.characterCount;
-  const dataViewProps = { root, source, language, indent, options, editable: !parsed.diagnostics.some(item => item.code === 'W060'), pending: parsed.pending || structure.pending, valid: parsed.ok, structureError: !!structure.error, onChange: updateSource, onContextPath: openPathMenu, selectedPath: cursor.path };
+  const dataViewProps = { treeFold, root, source, language, indent, options, editable: !parsed.diagnostics.some(item => item.code === 'W060'), pending: parsed.pending || structure.pending, valid: parsed.ok, structureError: !!structure.error, onChange: updateSource, onContextPath: openPathMenu, selectedPath: cursor.path };
 
   async function copySource() {
     try {
@@ -380,16 +389,18 @@ export default function App() {
   }
 
   function download() {
-    const blob = new Blob([source], { type: 'application/json' });
+    const stream = /\.(?:jsonl|ndjson)$/i.test(fileName) || isRecordStream(source);
+    const blob = new Blob([source], { type: stream ? 'application/x-ndjson' : 'application/json' });
     const href = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = href;
     const safeName = fileName.trim().replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/[. ]+$/, '');
-    anchor.download = (safeName.replace(/\.[^.]*$/, '') || 'document') + '.json';
+    const extension = stream ? (/\.ndjson$/i.test(safeName) ? '.ndjson' : '.jsonl') : jsonc ? '.jsonc' : '.json';
+    anchor.download = (safeName.replace(/\.[^.]*$/, '') || 'document') + extension;
     anchor.click();
     URL.revokeObjectURL(href);
   }
-  const viewLabels = language === 'zh' ? { code: '代码', tree: '树形', table: '表格', graph: '节点图', query: 'JSONPath', diff: '对比', jq: 'JQ', types: '类型生成' } : { code: 'Code', tree: 'Tree', table: 'Table', graph: 'Graph', query: 'JSONPath', diff: 'Diff', jq: 'JQ', types: 'Types' };
+  const viewLabels = language === 'zh' ? { code: '代码', tree: '树形', table: '表格', graph: '节点图', diff: '对比', types: '类型生成' } : { code: 'Code', tree: 'Tree', table: 'Table', graph: 'Graph', diff: 'Diff', types: 'Types' };
   const command = (id: CommandId, label: string, run: () => void, disabled = false): PaletteCommand => {
     const { icon, tone } = commandDefinitions[id];
     return { id, label, run, disabled, icon, tone, binding: shortcuts.bindings[id], nativeEditing: id === 'undo' || id === 'redo' };
@@ -465,17 +476,16 @@ export default function App() {
     command('minify', t.minify, minifySource, invalidOrBusy),
     command('mask', language === 'zh' ? '数据脱敏' : 'Mask sensitive data', maskSource, invalidOrBusy),
     command('search', language === 'zh' ? '查找替换' : 'Find and replace', () => { if (view === 'diff') activeEditor(inputRef.current)?.search(); else { setView('code'); requestAnimationFrame(() => inputRef.current?.search()); } }),
-    command('split', language === 'zh' ? '切换双栏联动' : 'Toggle linked split view', () => { setView('code'); setSplit(previous => !previous); }),
     command('open', t.open, () => fileInput.current?.click()),
     command('url', language === 'zh' ? '从 URL / cURL 导入' : 'Import URL / cURL', () => setRemoteOpen(true)),
-    command('copy', language === 'zh' ? '复制格式化结果' : 'Copy formatted JSON', copyFormatted, invalidOrBusy),
+    command('copy', language === 'zh' ? '复制美化 JSON' : 'Copy formatted JSON', copyFormatted, invalidOrBusy),
     command('copyRaw', copied ? t.copied : t.copy, () => { void copySource(); }),
     command('export', t.export, download),
     command('undo', t.undo, () => activeEditor(inputRef.current)?.undo(), !historyState.undo),
     command('redo', t.redo, () => activeEditor(inputRef.current)?.redo(), !historyState.redo),
     command('unescape', t.unescape, unescapeSource, transform.busy),
     command('escape', t.escape, () => transform.run('escape', result => { if (result.ok) applyTransform(result.source); }), transform.busy),
-    ...viewOrder.map(id => command(id, viewLabels[id], () => setView(id))),
+    ...viewTabs.map(id => command(id, viewLabels[id], () => setView(id))),
     command('install', language === 'zh' ? '安装离线应用' : 'Install offline app', () => { void install.install(); }, !install.available),
     command('shortcuts', language === 'zh' ? '快捷键设置' : 'Keyboard shortcuts', () => setShortcutsOpen(true)),
   ];
@@ -492,7 +502,7 @@ export default function App() {
         </a>
         <div className="topbar-right">
           <HelpTooltip side="bottom" label={language === 'zh' ? '命令使用指南' : 'Command guide'}><button className="header-control" data-tone="blue" onClick={() => setGuideOpen(true)}><BookOpen size={16} /><span>{language === 'zh' ? '文档' : 'Docs'}</span></button></HelpTooltip>
-          <HelpTooltip side="bottom" label="GitHub"><a className="header-control repo-link" href="https://github.com/zhanpoint/jsonsage" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><Github size={16} /></a></HelpTooltip>
+          <HelpTooltip side="bottom" label="GitHub"><a className="header-control repo-link" href="https://github.com/zhanpoint/jsonsage" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><Github size={16} /><span>GitHub</span></a></HelpTooltip>
           <HelpTooltip side="bottom" label={`${commandsById.palette.label} · ${shortcutLabel(shortcuts.bindings.palette)}`}><button className="header-control command-trigger" data-tone="violet" onClick={() => setCommandOpen(true)} aria-label={commandsById.palette.label}><Command size={16} /><span>{language === 'zh' ? '命令' : 'Commands'}</span></button></HelpTooltip>
           {install.available && <HelpTooltip side="bottom" label={commandsById.install.label}><button className="header-control" onClick={() => void install.install()} aria-label={commandsById.install.label}><MonitorDown size={16} /><span>{language === 'zh' ? '安装' : 'Install'}</span></button></HelpTooltip>}
           <EditorSettings language={language} indent={indent} onIndentChange={setIndent} autoSave={autoSave} onAutoSaveChange={setAutoSave} onShortcuts={() => setShortcutsOpen(true)} />
@@ -529,13 +539,13 @@ export default function App() {
           <HelpTooltip side="bottom" label={theme === 'light' ? t.theme : t.lightTheme}><button
             type="button"
             className="header-control theme-toggle"
-            data-tone={theme === 'light' ? 'blue' : 'amber'}
+            data-tone={theme === 'dark' ? 'blue' : 'amber'}
             aria-label={theme === 'light' ? t.theme : t.lightTheme}
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           >
             <Moon size={18} className="theme-moon" aria-hidden="true" />
             <Sun size={18} className="theme-sun" aria-hidden="true" />
-            <span>{language === 'zh' ? '明暗' : 'Theme'}</span>
+            <span>{theme === 'dark' ? (language === 'zh' ? '深色' : 'Dark') : (language === 'zh' ? '浅色' : 'Light')}</span>
           </button></HelpTooltip>
           <div className="palette-picker" ref={palettePickerRef}>
             <HelpTooltip side="bottom" label={t.palette}>
@@ -571,18 +581,26 @@ export default function App() {
         </div>
       </header>
 
-      {pathMenu && <PathMenu target={pathMenu} language={language} onClose={() => setPathMenu(null)} onCopy={async path => { try { await navigator.clipboard.writeText(path); setNotice('copied'); } catch { setNotice('copyFailed'); } }} />}
+      {pathMenu && <PathMenu target={pathMenu} language={language} onPreview={() => openTextPreview(pathMenu.path)} onClose={() => setPathMenu(null)} onCopy={async path => { try { await navigator.clipboard.writeText(path); setNotice('copied'); } catch { setNotice('copyFailed'); } }} />}
       {remoteOpen && <Suspense fallback={null}><RemoteImport language={language} onClose={() => setRemoteOpen(false)} onLoad={text => openDocument(newHistoryDraft({ source: text.replace(/\r\n?/g, '\n'), fileName: 'import.json', jsonc: false }), true)} /></Suspense>}
       <main id="workspace" className="workspace">
+        <div className="reading-workspace">
         <section className={`editor-card${dragging ? ' is-dragging' : ''}`} aria-label={t.editor}
           onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest('.cm-editor')) activeEditor(inputRef.current)?.flush(); }}
           onDragOver={event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); setDragging(true); } }}
           onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }}
           onDrop={event => { if (event.dataTransfer.files.length) { event.preventDefault(); setDragging(false); void loadFile(event.dataTransfer.files[0]); } }}>
           {dragging && <div className="drop-hint">{language === 'zh' ? '松开以导入 JSON 文件' : 'Drop to import JSON'}</div>}
-          <DocumentTabs tabs={documents.tabs} activeId={active.id} language={language} onSelect={selectTab} onClose={id => { void closeTab(id); }} onPin={workspace.pin} onNew={() => openDocument()} onSave={() => { void saveDocument(); }} newShortcut={shortcutLabel(shortcuts.bindings.newHistory)} saveShortcut={shortcutLabel(shortcuts.bindings.saveHistory)} history={<HistoryMenu open={historyOpen} onOpenChange={open => { if (open) void openHistory(); else setHistoryOpen(false); }} language={language} shortcut={shortcutLabel(shortcuts.bindings.history)} activeRecord={documentHistory.draft?.entry?.id} fixedRecords={new Set(documents.tabs.flatMap(tab => { const entry = tab.session.snapshot().draft?.entry; return tab.pinned && entry ? [entry.id] : []; }))} onSelect={openRecord} onUpdate={updateRecord} onRemove={removeRecord} onUnfix={entry => { const tab = documents.tabs.find(tab => tab.session.snapshot().draft?.entry?.id === entry.id); if (tab) workspace.pin(tab.id, false); }} onError={(cause, operation) => notify(historyError(cause, language === 'zh', operation), true)} />}>
+          <DocumentTabs tabs={documents.tabs} activeId={active.id} language={language} onSelect={selectTab} onClose={id => { void closeTab(id); }} onPin={workspace.pin} onRename={renameTab} onNew={() => openDocument()} onSave={() => { void saveDocument(); }} newShortcut={shortcutLabel(shortcuts.bindings.newHistory)} saveShortcut={shortcutLabel(shortcuts.bindings.saveHistory)} history={<HistoryMenu open={historyOpen} onOpenChange={open => { if (open) void openHistory(); else setHistoryOpen(false); }} language={language} shortcut={shortcutLabel(shortcuts.bindings.history)} activeRecord={documentHistory.draft?.entry?.id} fixedRecords={new Set(documents.tabs.flatMap(tab => { const entry = tab.session.snapshot().draft?.entry; return tab.pinned && entry ? [entry.id] : []; }))} onSelect={openRecord} onUpdate={updateRecord} onRemove={removeRecord} onUnfix={entry => { const tab = documents.tabs.find(tab => tab.session.snapshot().draft?.entry?.id === entry.id); if (tab) workspace.pin(tab.id, false); }} onError={(cause, operation) => notify(historyError(cause, language === 'zh', operation), true)} />}>
           <div className="editor-toolbar">
-            <div className="file-label"><FileJson2 size={16} aria-hidden="true" /><input className="file-name" aria-label={t.file} value={fileName} onChange={(event) => setFileName(event.target.value)} spellCheck={false} /></div>
+            <div className="view-tabs" role="group" aria-label={language === 'zh' ? '数据视图' : 'Data views'}>
+              {viewTabs.map(mode => {
+                const item = commandsById[mode];
+                return <button key={mode} className={mode === 'diff' ? 'view-group-start' : undefined} data-tone={item.tone} aria-pressed={view === mode} onClick={item.run} title={shortcutLabel(item.binding)}><item.icon size={14} aria-hidden="true" />{item.label}</button>;
+              })}
+              {importing && <span role="status">{language === 'zh' ? '正在导入…' : 'Importing…'}</span>}
+
+            </div>
             <div className="toolbar-actions">
               <HelpTooltip label={t.mode}><label className="mode-switch">
                 <input type="checkbox" checked={jsonc} onChange={(event) => { setJsonc(event.target.checked); setNotice(null); }} aria-label="JSONC" />
@@ -592,36 +610,39 @@ export default function App() {
               <span className="toolbar-separator" />
               {(['validate', 'repair', 'mask', 'format', 'minify', 'escape', 'unescape'] as const).map(id => <CommandButton key={id} command={commandsById[id]} />)}
               <span className="toolbar-separator" />
-              {(['undo', 'redo', 'search', 'copyRaw', 'open', 'url', 'copy', 'export'] as const).map(id => <CommandButton key={id} command={commandsById[id]} />)}
-              <input hidden ref={fileInput} type="file" accept=".json,.jsonc,application/json,text/plain" onChange={event => { void loadFile(event.target.files?.[0]); event.target.value = ''; }} />
+              {(['undo', 'redo', 'search', 'copyRaw', 'copy', 'open', 'url', 'export'] as const).map(id => <CommandButton key={id} command={commandsById[id]} />)}
+              <span className="toolbar-separator" />
+              <HelpTooltip label={language === 'zh' ? '侧边预览' : 'Side preview'}><button className="tool-button" aria-label={language === 'zh' ? '侧边预览' : 'Side preview'} data-tone="violet" aria-pressed={!!textPreview} onClick={() => setTextPreview(previous => previous ? null : { path: cursor.path })}><PanelRight size={16} /></button></HelpTooltip>
+              <input hidden ref={fileInput} type="file" accept=".json,.jsonc,.jsonl,.ndjson,application/json,application/jsonl,application/x-ndjson,text/plain" onChange={event => { void loadFile(event.target.files?.[0]); event.target.value = ''; }} />
             </div>
           </div>
-
-          <div className="view-tabs" role="group" aria-label={language === 'zh' ? '数据视图' : 'Data views'}>
-            {viewTabs.map(mode => {
-              const item = commandsById[mode];
-              return <button key={mode} className={mode === 'query' ? 'view-group-start' : undefined} data-tone={item.tone} aria-pressed={mode === 'split' ? split && view === 'code' : view === mode} aria-label={mode === 'split' ? (language === 'zh' ? '双栏联动' : 'Linked split view') : undefined} onClick={item.run} title={shortcutLabel(item.binding)}><item.icon size={14} aria-hidden="true" />{mode === 'split' ? (language === 'zh' ? '双栏' : 'Split') : item.label}</button>;
-            })}
-            <span>{importing ? (language === 'zh' ? '正在导入…' : 'Importing…') : editorDirty ? (language === 'zh' ? '正在同步…' : 'Syncing…') : transform.busy ? (language === 'zh' ? '正在处理…' : 'Processing…') : parsed.pending ? (language === 'zh' ? '正在检查…' : 'Checking…') : jsonc ? 'JSONC' : 'JSON'}</span>
-          </div>
+          <EditorViewport language={language}>
+          <PreviewWorkspace language={language} preview={textPreview && <Suspense fallback={<div className="view-message">{language === 'zh' ? '正在加载预览…' : 'Loading preview…'}</div>}><TextPreview source={source} path={textPreview.path} language={language} onClose={() => setTextPreview(null)} /></Suspense>}>
+              {(view === 'code' || view === 'tree') && <div className="editor-fold-actions">
+                <HelpTooltip label={language === 'zh' ? '全部展开' : 'Expand all'}><button type="button" className="tool-button" aria-label={language === 'zh' ? '全部展开' : 'Expand all'} onClick={() => foldViews(false)}><ChevronsDown size={15} /></button></HelpTooltip>
+                <HelpTooltip label={language === 'zh' ? '全部折叠' : 'Collapse all'}><button type="button" className="tool-button" aria-label={language === 'zh' ? '全部折叠' : 'Collapse all'} onClick={() => foldViews(true)}><ChevronsUp size={15} /></button></HelpTooltip>
+              </div>}
           <Suspense fallback={<div className="view-message">{language === 'zh' ? '正在加载视图…' : 'Loading view…'}</div>}>
-            <div hidden={view !== 'code'} className={split ? 'linked-editors' : undefined}>
-              <CodeEditor documentId={active.id} documentIds={documentIds} readOnly={!documents.ready} managedFormat language={language} onHistory={syncHistory} source={source} indent={indent} theme={theme} diagnostics={diagnostics} label={t.source} editorRef={inputRef} onChange={updateSource} onPendingChange={pending => { setEditorDirty(pending); if (pending) { fileLoadSequence.current++; transform.cancel(); } }} onFormat={formatSource} onRepair={autoFix} onCursor={cursor.select} onPaste={smartPaste} onContextPath={(event, offset) => { event.preventDefault(); cursor.resolve(offset, path => openPathMenu(event, path)); }} />
-              {split && view === 'code' && <DataView {...dataViewProps} view="tree" onSelect={(node, path, focus) => { cursor.set(path); inputRef.current?.locate(node.offset, node.offset + node.length, focus); }} onLocate={(start, end) => inputRef.current?.locate(start, end)} />}
+            <div hidden={view !== 'code' && view !== 'tree'} className={view === 'tree' ? 'code-view linked-editors' : 'code-view'}>
+              <CodeEditor folds={parsed.folds} documentId={active.id} documentIds={documentIds} readOnly={!documents.ready} managedFormat language={language} onHistory={syncHistory} source={source} indent={indent} theme={theme} diagnostics={diagnostics} label={t.source} editorRef={inputRef} onChange={updateSource} onPendingChange={pending => { setEditorDirty(pending); if (pending) { fileLoadSequence.current++; transform.cancel(); } }} onFormat={formatSource} onRepair={autoFix} onCursor={cursor.select} onPaste={smartPaste} onContextPath={(event, offset) => { event.preventDefault(); cursor.resolve(offset, path => openPathMenu(event, path)); }} />
+              {view === 'tree' && <DataView {...dataViewProps} view="tree" onSelect={(node, path, focus) => { cursor.set(path); inputRef.current?.locate(node.offset, node.offset + node.length, focus); }} onLocate={(start, end) => inputRef.current?.locate(start, end)} />}
             </div>
           </Suspense>
-          {(view === 'tree' || view === 'table' || view === 'graph') && <DataView {...dataViewProps} view={view} onSelect={(_node, path) => cursor.set(path)} onLocate={(start, end) => { setView('code'); requestAnimationFrame(() => inputRef.current?.locate(start, end)); }} />}
+          {(view === 'table' || view === 'graph') && <DataView {...dataViewProps} view={view} onSelect={(_node, path) => cursor.set(path)} onLocate={(start, end) => { setView('code'); requestAnimationFrame(() => inputRef.current?.locate(start, end)); }} />}
           <Suspense fallback={<div className="view-message">{language === 'zh' ? '正在加载工具…' : 'Loading…'}</div>}>
-            {(view === 'query' || view === 'diff' || view === 'jq' || view === 'types') && <AnalysisTools key={active.id} mode={view} other={compareSource} onOtherChange={setCompareSource} expression={view === 'jq' ? jqExpression : queryExpression} onExpressionChange={view === 'jq' ? setJqExpression : setQueryExpression} source={source} onChange={updateSource} language={language} theme={theme} indent={indent} jsonc={jsonc} onNotice={notify} onHistory={syncHistory} />}
+            {(view === 'diff' || view === 'types') && <AnalysisTools key={active.id} mode={view} other={compareSource} onOtherChange={setCompareSource} source={source} onChange={updateSource} language={language} theme={theme} indent={indent} jsonc={jsonc} onNotice={notify} onHistory={syncHistory} />}
           </Suspense>
+          </PreviewWorkspace>
+          </EditorViewport>
           <div className="editor-footer" id="editor-help">
             <span className="save-status" role="status" data-error={!!documentHistory.error}>{documentHistory.error ? (language === 'zh' ? '未保存' : 'Not saved') : documentHistory.saving ? (language === 'zh' ? '正在保存…' : 'Saving…') : documentHistory.dirty || editorDirty ? (autoSave ? (language === 'zh' ? '等待保存' : 'Waiting to save') : (language === 'zh' ? '未保存' : 'Unsaved')) : documentHistory.draft?.entry ? (language === 'zh' ? '已保存' : 'Saved') : (autoSave ? (language === 'zh' ? '自动保存' : 'Auto-save') : (language === 'zh' ? '手动保存' : 'Manual save'))}</span>
             <div className="footer-left"><span><Code2 size={13} /> {t.utf8}</span><span>{lineCount} {t.lines}</span><span>{characterCount?.toLocaleString() ?? '…'} {t.chars}</span></div>
-            <button className="current-path" aria-label={language === 'zh' ? '复制当前路径' : 'Copy current path'} title={pathText(cursor.path)} onClick={event => { const box = event.currentTarget.getBoundingClientRect(); openPathMenu({ clientX: box.left, clientY: box.bottom, preventDefault() {} }, cursor.path); }}><code>{pathText(cursor.path)}</code><Copy size={12} /></button>
-            <span className="shortcut"><kbd>{shortcutLabel(shortcuts.bindings.format)}</kbd> {t.shortcut}</span>
+            <PathBreadcrumbs path={cursor.path} root={root} language={language} onCopy={() => { void navigator.clipboard.writeText(pathText(cursor.path)).then(() => setNotice('copied'), () => setNotice('copyFailed')); }} />
           </div>
           </DocumentTabs>
         </section>
+
+        </div>
 
         {notification}
         {guideOpen && <Suspense fallback={null}><CommandGuide language={language} commands={commands} onClose={() => setGuideOpen(false)} /></Suspense>}

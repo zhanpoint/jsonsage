@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { Annotation, Compartment, EditorState, type StateEffect } from '@codemirror/state';
 import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
-import { bracketMatching, foldKeymap, foldedRanges, indentOnInput, indentUnit, unfoldEffect } from '@codemirror/language';
+import { codeLanguage, type CodeLanguage } from '../lib/codeLanguages';
+import { bracketMatching, foldAll, foldEffect, foldKeymap, foldedRanges, indentOnInput, indentUnit, unfoldAll, unfoldEffect } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap, indentWithTab, undo, redo, undoDepth, redoDepth, isolateHistory } from '@codemirror/commands';
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
 import { search, searchKeymap, openSearchPanel } from '@codemirror/search';
@@ -13,15 +14,17 @@ import { diffHighlights, setDiffHighlights } from '../lib/diffHighlights';
 import type { DiffHighlight } from '../lib/json/analysis';
 import { documentChange, editorDiagnostics, registerEditor, type EditorHandle, type HistoryState } from '../lib/codeEditor';
 import { smartCandidate } from '../lib/json/smartInput';
-import { LARGE_DOCUMENT, largeJsonLanguage, setFoldIndex } from '../lib/largeJsonLanguage';
+import { LARGE_DOCUMENT, largeJsonLanguage, setFoldIndex, foldIndex } from '../lib/largeJsonLanguage';
 import { inlineFolding } from '../lib/inlineFolding';
 
 export type { EditorHandle, HistoryState } from '../lib/codeEditor';
 type Props = {
+  codeLanguage?: CodeLanguage;
+  folds?: Uint32Array | null;
   documentId?: string; documentIds?: readonly string[];
   managedFormat?: boolean;
   highlights?: DiffHighlight[];
-  readOnly?: boolean; onCursor?: (offset: number) => void;
+  readOnly?: boolean; onCursor?: (offset: number, pending?: boolean) => void;
   onPendingChange?: (pending: boolean) => void;
   onPaste?: (text: string, insert: (text: string) => boolean) => void; onRepair?: () => void;
   source: string; onChange: (source: string) => void; onFormat: () => void; onContextPath: (event: MouseEvent, offset: number) => void;
@@ -40,6 +43,7 @@ export default function CodeEditor(props: Props) {
   const view = useRef<EditorView | null>(null);
   const latest = useRef(props); latest.current = props;
   const source = useRef(props.source);
+  const pendingSnapshot = useRef(false);
   const [documentRevision, setDocumentRevision] = useState(0);
   const compartments = useRef({ indent: new Compartment(), theme: new Compartment(), label: new Compartment(), syntax: new Compartment(), readOnly: new Compartment() });
   const switchDocument = useRef<((props: Props) => void) | null>(null);
@@ -51,21 +55,21 @@ export default function CodeEditor(props: Props) {
     let historyState: HistoryState = { undo: false, redo: false };
     source.current = initial.source;
     let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
-    let pendingSnapshot = false;
     const flush = (target = latest.current) => {
       clearTimeout(snapshotTimer);
-      if (!pendingSnapshot) return;
-      pendingSnapshot = false;
+      if (!pendingSnapshot.current) return;
+      pendingSnapshot.current = false;
       source.current = instance.state.doc.toString();
       setDocumentRevision(revision => revision + 1);
       target.onChange(source.current);
       target.onPendingChange?.(false);
+      target.onCursor?.(instance.state.selection.main.head);
     };
     const format = () => { flush(); requestAnimationFrame(() => latest.current.onFormat()); return true; };
     const createState = (document: Props) => EditorState.create({
         doc: document.source,
         extensions: [
-          config.syntax.of(document.source.length > LARGE_DOCUMENT ? largeJsonLanguage : json()), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
+          config.syntax.of(document.codeLanguage ? codeLanguage(document.codeLanguage) : document.source.length > LARGE_DOCUMENT ? largeJsonLanguage : json()), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
           drawSelection(), highlightActiveLine(), highlightActiveLineGutter(),
           history(), search({ top: true }),
           config.readOnly.of([EditorState.readOnly.of(!!initial.readOnly), EditorView.editable.of(!initial.readOnly)]),
@@ -76,17 +80,17 @@ export default function CodeEditor(props: Props) {
             indentWithTab, ...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap,
           ]),
           EditorView.updateListener.of(update => {
-            if (update.selectionSet || update.docChanged) latest.current.onCursor?.(update.state.selection.main.from);
+            if (update.selectionSet || update.docChanged) latest.current.onCursor?.(update.state.selection.main.head, update.docChanged);
             if (update.docChanged && !update.transactions.some(transaction => transaction.annotation(externalChange))) {
               if (update.state.doc.length > LARGE_DOCUMENT) {
-                if (!pendingSnapshot) { pendingSnapshot = true; latest.current.onPendingChange?.(true); }
+                if (!pendingSnapshot.current) { pendingSnapshot.current = true; latest.current.onPendingChange?.(true); }
                 clearTimeout(snapshotTimer); snapshotTimer = setTimeout(flush, 300);
               } else {
-                clearTimeout(snapshotTimer); pendingSnapshot = false;
+                clearTimeout(snapshotTimer); pendingSnapshot.current = false;
                 source.current = update.state.doc.toString(); latest.current.onChange(source.current); latest.current.onPendingChange?.(false);
               }
             } else if (update.docChanged) {
-              clearTimeout(snapshotTimer); pendingSnapshot = false; latest.current.onPendingChange?.(false);
+              clearTimeout(snapshotTimer); pendingSnapshot.current = false; latest.current.onPendingChange?.(false);
             }
             const next = { undo: undoDepth(update.state) > 0, redo: redoDepth(update.state) > 0 };
             if (next.undo !== historyState.undo || next.redo !== historyState.redo) {
@@ -120,6 +124,18 @@ export default function CodeEditor(props: Props) {
     view.current = instance;
     const handle: EditorHandle = {
       flush, format,
+      setFolded(folded) {
+        if (!folded) { unfoldAll(instance); return; }
+        const ranges = latest.current.folds ?? instance.state.field(foldIndex, false);
+        if (!ranges) { foldAll(instance); return; }
+        const effects: StateEffect<unknown>[] = [];
+        let end = -1;
+        for (let i = 0; i < ranges.length; i += 2) {
+          const from = ranges[i], to = ranges[i + 1];
+          if (from >= end && to > from) { effects.push(foldEffect.of({ from, to })); end = to; }
+        }
+        instance.dispatch({ effects });
+      },
       history: () => latest.current.readOnly ? { undo: false, redo: false } : { undo: undoDepth(instance.state) > 0, redo: redoDepth(instance.state) > 0 },
       undo: () => { undo(instance); }, redo: () => { redo(instance); }, search: () => { openSearchPanel(instance); },
       locate(start, end, focus = true) {
@@ -187,11 +203,16 @@ export default function CodeEditor(props: Props) {
         actions: props.onRepair && diagnostic.severity === 'error' ? [{ name: props.language === 'zh' ? '自动修复' : 'Auto-Fix', apply: () => latest.current.onRepair?.() }] : undefined };
     })));
   }, [props.diagnostics, props.source, props.language, props.documentId]);
-  const large = props.source.length > LARGE_DOCUMENT;
-  useEffect(() => { view.current?.dispatch({ effects: compartments.current.syntax.reconfigure(large ? largeJsonLanguage : json()) }); }, [large, props.documentId]);
+  const large = !props.codeLanguage && props.source.length > LARGE_DOCUMENT;
+  useEffect(() => { view.current?.dispatch({ effects: compartments.current.syntax.reconfigure(props.codeLanguage ? codeLanguage(props.codeLanguage) : large ? largeJsonLanguage : json()) }); }, [large, props.codeLanguage, props.documentId]);
   useEffect(() => {
     const instance = view.current;
     if (!large || !instance) return;
+    // The primary editor shares validation's index; auxiliary editors build their own.
+    if (props.folds !== undefined) {
+      if (props.folds && !pendingSnapshot.current) instance.dispatch({ effects: setFoldIndex.of(props.folds) });
+      return;
+    }
     const document = instance.state.doc;
     const worker = new Worker(new URL('../workers/folds.worker.ts', import.meta.url), { type: 'module' });
     worker.onmessage = (event: MessageEvent<Uint32Array>) => {
@@ -201,11 +222,11 @@ export default function CodeEditor(props: Props) {
     worker.onerror = () => worker.terminate();
     worker.postMessage(props.source);
     return () => worker.terminate();
-  }, [large, props.source, props.documentId, documentRevision]);
+  }, [large, props.source, props.documentId, props.folds, documentRevision]);
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.indent.reconfigure(indentation(props.indent)) }); }, [props.indent, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.readOnly.reconfigure([EditorState.readOnly.of(!!props.readOnly), EditorView.editable.of(!props.readOnly)]) }); }, [props.readOnly, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.theme.reconfigure(editorTheme(props.theme === 'dark')) }); }, [props.theme, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.label.reconfigure([EditorView.contentAttributes.of({ 'aria-label': props.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(props.language === 'zh' ? chineseEditorPhrases : {})]) }); }, [props.label, props.language, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: setDiffHighlights.of(props.highlights ?? []) }); }, [props.highlights, props.documentId]);
-  return <div ref={host} />;
+  return <div ref={host} className="code-editor-host" />;
 }

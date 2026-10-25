@@ -69,8 +69,6 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 2 "$PUBLIC_URL/healthz"
           actual=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 "$PUBLIC_URL/version.json")
           test "$actual" = "{\"revision\":\"$GITHUB_SHA\"}"
-          curl --fail --silent --show-error --head "$PUBLIC_URL/vendor/jq.mjs" | grep -iq '^content-type: application/javascript'
-          curl --fail --silent --show-error --head "$PUBLIC_URL/vendor/jq.wasm" | grep -iq '^content-type: application/wasm'
           curl --fail --silent --show-error --head "$PUBLIC_URL/manifest.webmanifest" | grep -iq '^content-type: application/manifest+json'
           echo "Verified release $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary identity
