@@ -22,7 +22,14 @@ main() {
         previous_image=$(docker inspect --format '{{.Config.Image}}' "$container")
         previous_revision=$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$container")
     fi
-    docker compose build --pull app
+    # The CI runner builds the image; never compile on the production host.
+    docker image load
+    local image_revision
+    image_revision=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$JSONSAGE_IMAGE")
+    [[ $image_revision == "$revision" ]] || {
+        printf 'The release image revision does not match the requested commit.\n' >&2
+        return 1
+    }
 
     activate() {
         docker compose up -d --no-build --wait --wait-timeout 90 app || return 1

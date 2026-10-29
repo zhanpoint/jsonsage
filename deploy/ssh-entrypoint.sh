@@ -11,15 +11,15 @@ main() {
     exec 9>.ops/deploy.lock
     flock -w 30 9
     test -z "$(git status --porcelain)" || { printf 'Server checkout has local changes.\n' >&2; exit 1; }
-    git fetch --no-tags origin main
+    git fetch --no-tags origin main </dev/null
     local latest
     latest=$(git rev-parse origin/main)
     if [[ $revision != "$latest" ]]; then
         printf 'DEPLOY_SKIPPED %s superseded-by %s\n' "$revision" "$latest"
         exit 0
     fi
-    git checkout main
-    git merge --ff-only "$revision"
+    git checkout main </dev/null
+    git merge --ff-only "$revision" </dev/null
     exec /bin/bash deploy/deploy.sh "$revision"
 }
 main "$@"

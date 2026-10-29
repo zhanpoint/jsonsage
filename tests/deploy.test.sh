@@ -18,8 +18,11 @@ printf '%s|%s\n' "$JSONSAGE_IMAGE" "$*" >> "$CALLS"
 case "$*" in
     'compose ps -q app') printf 'old-container\n' ;;
     *'{{.Config.Image}}'*) printf 'jsonsage:%s\n' "$PREVIOUS" ;;
+    'image inspect '*)
+        if [[ $SCENARIO == image-mismatch ]]; then printf '%s\n' "$PREVIOUS";
+        else printf '%s\n' "$REVISION"; fi ;;
     *'org.opencontainers.image.revision'*) printf '%s\n' "$PREVIOUS" ;;
-    'compose build --pull app') [[ $SCENARIO != build-failure ]] ;;
+    'image load') [[ $SCENARIO != load-failure ]] ;;
     'compose up '* )
         if [[ $APP_REVISION == "$REVISION" && $SCENARIO == start-failure ]]; then exit 1; fi
         if [[ $SCENARIO == version-failure && $APP_REVISION == "$REVISION" ]]; then
@@ -53,12 +56,13 @@ for SCENARIO in start-failure version-failure; do
     test "$(cat "$ACTIVE")" = "$PREVIOUS"
     grep -Fq "jsonsage:$PREVIOUS|compose up" "$CALLS"
 done
-SCENARIO=build-failure
-if run_release; then exit 1; fi
-if grep -q 'compose up' "$CALLS"; then printf 'A build failure replaced the container.\n' >&2; exit 1; fi
+for SCENARIO in load-failure image-mismatch; do
+    if run_release; then exit 1; fi
+    if grep -q 'compose up' "$CALLS"; then printf 'An invalid image replaced the container.\n' >&2; exit 1; fi
+done
 SCENARIO=success
 if run_release invalid; then exit 1; fi
 test ! -s "$CALLS"
 if run_release 8088 "$PREVIOUS"; then exit 1; fi
 test ! -s "$CALLS"
-printf 'Deployment success, rollback, build isolation and revision checks passed.\n'
+printf 'Deployment success, rollback, image isolation and revision checks passed.\n'
