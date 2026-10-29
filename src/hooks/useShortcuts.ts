@@ -20,6 +20,7 @@ export function useCommandKeyboard(commands: PaletteCommand[], flush: () => void
       const command = latest.current.commands.find(item => item.binding === shortcut);
       if (!command || command.disabled) return;
       // Preserve native text-field editing; CM6 editor commands still use its own APIs.
+      if (command.nativeEditing && target?.closest('input,textarea')) return;
       const editor = editorAt(target);
       if (command.nativeEditing && target?.closest('input,textarea,[contenteditable],.cm-editor') && !editor) return;
       event.preventDefault(); event.stopPropagation();

@@ -38,6 +38,9 @@ const manyWarnings = `{${Array.from({ length: 110 }, () => '"a":1').join(',')}} 
 assert.equal(validate(manyWarnings).ok, false);
 assert.ok(validate(manyWarnings).diagnostics.some((item) => item.severity === 'error'));
 console.log('Structured diagnostic checks passed.');
+assert.deepEqual(lineColumn('a\r\nb\rc\n😀x', 11), { line: 4, column: 4 });
+assert.deepEqual(lineColumn('a\r\nb', 2), { line: 2, column: 1 });
+assert.deepEqual(lineColumn('a\r\nb', -1), { line: 1, column: 1 });
 for (const text of ['{\r\n  "中😀" 1\r\n}', '[\n1 2\n3 4\n]', '{\r"a" 1\r}', '"' + '\u0001'.repeat(1000) + '"']) {
   const issues = validate(text).diagnostics;
   assert.ok(issues.length <= 100, 'Malformed strings must not create an unbounded diagnostic list');

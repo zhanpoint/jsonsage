@@ -26,11 +26,8 @@
 .app-shell[data-palette]:not([data-palette="default"]) .details-footer,
 .app-shell[data-palette]:not([data-palette="default"]) .issue-row { border-color: var(--p-line); }
 .app-shell[data-palette]:not([data-palette="default"]) .editor-card:focus-within { border-color: var(--p-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary) 15%, transparent); }
-.app-shell[data-palette]:not([data-palette="default"]) .file-name:focus-visible { border-color: var(--p-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary) 15%, transparent); }
-.app-shell[data-palette]:not([data-palette="default"]) .file-name,
 .app-shell[data-palette]:not([data-palette="default"]) .issue-title,
 .app-shell[data-palette]:not([data-palette="default"]) .empty-state strong { color: var(--p-fg); }
-.app-shell[data-palette]:not([data-palette="default"]) .file-label,
 .app-shell[data-palette]:not([data-palette="default"]) .mode-switch,
 .app-shell[data-palette]:not([data-palette="default"]) .tool-button,
 .app-shell[data-palette]:not([data-palette="default"]) .issue-content p,
@@ -38,7 +35,6 @@
 .app-shell[data-palette]:not([data-palette="default"]) .details-footer,
 .app-shell[data-palette]:not([data-palette="default"]) .page-footer,
 .app-shell[data-palette]:not([data-palette="default"]) .privacy-note { color: var(--p-subtle); }
-.app-shell[data-palette]:not([data-palette="default"]) .file-label svg,
 .app-shell[data-palette]:not([data-palette="default"]) .page-footer a,
 .app-shell[data-palette]:not([data-palette="default"]) .page-footer a:hover,
 .app-shell[data-palette]:not([data-palette="default"]) .privacy-lock { color: var(--p-interactive); }

@@ -1,0 +1,7 @@
+{
+  "post_id": "tech_doc_8801",
+  "title": "深度学习中的优化算法与梯度下降分析",
+  "published_at": "2026-10-26T09:44:00Z",
+  "tags": ["Deep Learning", "Mathematics", "Optimization"],
+  "content_markdown": "# 优化算法导论：从 SGD 到 Adam\n\n在深度学习中，损失函数 $L(\\theta)$ 的最小化依赖于各种梯度更新策略。\n\n---\n\n## 1. 损失曲面示意图\n\n下图展示了非凸优化中常见的鞍点与局部极小值分布：\n\n![Loss Landscape](https://example.com/assets/loss_landscape.png \"三维损失曲面与优化路径\")\n\n> **核心直觉**：高维空间中的停滞点大多是鞍点而非严格极小值点。\n\n---\n\n## 2. 算法核心公式对比\n\n### 2.1 动量法 (Momentum)\n引入速度项 $v_t$ 缓解振荡：\n\n$$v_t = \\gamma v_{t-1} + \\eta \\nabla_\\theta L(\\theta)$$\n$$\\theta = \\theta - v_t$$\n\n### 2.2 Adam (Adaptive Moment Estimation)\n结合一阶矩与二阶矩自适应调整学习率：\n\n$$m_t = \\beta_1 m_{t-1} + (1 - \\beta_1) g_t$$\n$$v_t = \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2$$\n\n偏置校正及参数更新公式为：\n\n$$\\theta_{t+1} = \\theta_t - \\frac{\\eta}{\\sqrt{\\hat{v}_t} + \\epsilon} \\hat{m}_t$$\n\n---\n\n## 3. 常见优化器性能基准测试\n\n| 算法 | 学习率自适应 | 鞍点逃逸速度 | 显存占用 | 推荐场景 |\n| :--- | :---: | :---: | :---: | :--- |\n| **SGD** | ❌ 否 | 慢 | 低 ($O(1)$) | CV 经典任务微调 |\n| **Momentum** | ❌ 否 | 中等 | 中 ($+1\\times$ 参数量) | 通用基线模型 |\n| **Adam** | ✅ 是 | 快 | 高 ($+2\\times$ 参数量) | NLP、Transformer 及大部分冷启动 |\n| **AdamW** | ✅ 是 | 快 | 高 ($+2\\times$ 参数量) | 大语言模型预训练 |\n\n---\n\n## 4. 任务清单与待办\n\n- [x] 实现带偏置校正的 Adam 核心算子\n- [x] 验证学习率衰减策略 $\\eta_t = \\frac{\\eta_0}{\\sqrt{t}}$\n- [ ] 进行超参数网格搜索：\n  1. 学习率 $\\eta \\in [10^{-4}, 10^{-2}]$\n  2. 权重衰减 $\\lambda \\in [0.01, 0.1]$"
+}

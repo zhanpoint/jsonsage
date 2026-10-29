@@ -151,6 +151,13 @@ assert.equal((await migrated.read('legacy'))?.source, 'manual unsaved source');
 await migrated.close(); await deleteDB(legacyName);
 
 const { DocumentWorkspace } = await import('../src/lib/documentWorkspace');
+const { sampleDocument } = await import('../src/lib/sampleDocument');
+const sampleWorkspace = new DocumentWorkspace(sampleDocument());
+await sampleWorkspace.restore(null);
+const sample = sampleWorkspace.snapshot().tabs[0].session.snapshot().draft!;
+assert.equal(sample.fileName, 'sample.json');
+assert.equal(JSON.parse(sample.source).name, 'JsonSage');
+assert.equal(sample.jsonc, false);
 const tabsName = `tabs-${crypto.randomUUID()}`, tabStore = new HistoryStore(tabsName);
 const workspace = new DocumentWorkspace(newHistoryDraft(), tabStore);
 await workspace.restore(null);

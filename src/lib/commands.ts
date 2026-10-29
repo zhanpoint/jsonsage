@@ -1,4 +1,4 @@
-import { AlignLeft, Wrench, ShieldCheck, Minimize2, ShieldEllipsis, Search, FolderOpen, Link2, ClipboardCheck, Download, Undo2, Redo2, TextQuote, Quote, Code2, ListTree, Table2, Workflow, GitCompareArrows, FileCode2, MonitorDown, Command, Keyboard, Copy, History, BookmarkPlus, FilePlus2 } from 'lucide-react';
+import { IndentIncrease, Wrench, ShieldCheck, Minimize2, EyeOff, Search, FolderOpen, Link2, ClipboardCheck, Download, Undo2, Redo2, TextQuote, Quote, Code2, ListTree, Table2, Workflow, GitCompareArrows, FileCode2, MonitorDown, Command, Keyboard, Copy, History, BookmarkPlus, FilePlus2 } from 'lucide-react';
 
 export const commandDefinitions = {
   palette: { icon: Command, tone: 'violet', shortcut: 'Mod+K' },
@@ -6,11 +6,11 @@ export const commandDefinitions = {
   newHistory: { icon: FilePlus2, tone: 'blue', shortcut: 'Alt+N' },
   saveHistory: { icon: BookmarkPlus, tone: 'green', shortcut: 'Mod+S' },
   shortcuts: { icon: Keyboard, tone: 'slate', shortcut: 'Alt+K' },
-  format: { icon: AlignLeft, tone: 'blue', shortcut: 'Mod+Enter' },
+  format: { icon: IndentIncrease, tone: 'blue', shortcut: 'Mod+Enter' },
   repair: { icon: Wrench, tone: 'amber', shortcut: 'Alt+R' },
   validate: { icon: ShieldCheck, tone: 'green', shortcut: 'Alt+V' },
   minify: { icon: Minimize2, tone: 'blue', shortcut: 'Alt+M' },
-  mask: { icon: ShieldEllipsis, tone: 'violet', shortcut: 'Alt+P' },
+  mask: { icon: EyeOff, tone: 'violet', shortcut: 'Alt+P' },
   search: { icon: Search, tone: 'blue', shortcut: 'Mod+F' },
   open: { icon: FolderOpen, tone: 'amber', shortcut: 'Mod+O' },
   url: { icon: Link2, tone: 'cyan', shortcut: 'Alt+U' },

@@ -1,0 +1,11 @@
+.path-breadcrumbs { display: flex; align-items: center; gap: 4px; min-width: 0; max-width: 65%; color: var(--tip-fg); }
+.path-segments { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.path-segment { display: flex; align-items: center; gap: 5px; flex: none; font-size: 11px; padding: 3px 0; }
+.path-segment svg { opacity: .6; flex: none; }
+.path-segment > button { display: inline-flex; align-items: center; gap: 5px; padding: 2px; border: 0; border-radius: 3px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.path-segment > button:hover { background: var(--tip-bg); }
+.path-segment > button:focus-visible { outline: 1px solid var(--p-interactive, #6579d9); }
+.path-segment[aria-current] > button { color: var(--icon-blue); }
+.path-divider { margin: 0 5px; }
+.path-breadcrumbs > button { width: 24px; height: 24px; padding: 4px; flex: none; }
+@media (max-width: 650px) { .path-breadcrumbs { max-width: 100%; } }

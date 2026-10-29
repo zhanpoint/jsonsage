@@ -1,0 +1,57 @@
+.rainbow-button {
+  --rainbow-colors: linear-gradient(90deg, oklch(66.2% 0.225 25.9), oklch(90.7% 0.231 133), oklch(69.6% 0.165 251), oklch(80.2% 0.134 225), oklch(60.4% 0.26 302));
+  --rainbow-fill: #121213;
+  --rainbow-fade: linear-gradient(#121213 50%, rgb(18 18 19 / .6) 80%, transparent);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 46px;
+  padding: 11px 24px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background-image: linear-gradient(var(--rainbow-fill), var(--rainbow-fill)), var(--rainbow-fade), var(--rainbow-colors);
+  background-size: 200%;
+  background-clip: padding-box, border-box, border-box;
+  background-origin: border-box;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  animation: rainbow-button-flow 2s infinite linear;
+  transition: transform .15s;
+}
+.lp a.rainbow-button { color: #fff; }
+.rainbow-button::before {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  left: 50%;
+  width: 60%;
+  height: 20%;
+  transform: translateX(-50%);
+  background: var(--rainbow-colors);
+  background-size: 200%;
+  filter: blur(12px);
+  pointer-events: none;
+  animation: rainbow-button-flow 2s infinite linear;
+}
+.rainbow-button[data-variant='outline'], .lp[data-theme='dark'] .rainbow-button {
+  --rainbow-fill: #fff;
+  --rainbow-fade: linear-gradient(#fff 50%, rgb(255 255 255 / .6) 80%, transparent);
+}
+.lp a.rainbow-button[data-variant='outline'], .lp[data-theme='dark'] a.rainbow-button { color: #121213; }
+.lp[data-theme='dark'] .rainbow-button[data-variant='outline'] {
+  --rainbow-fill: #0a0a0a;
+  --rainbow-fade: linear-gradient(#0a0a0a 50%, rgb(255 255 255 / .6) 80%, transparent);
+  color: #fff;
+}
+.rainbow-button:hover { transform: translateY(-2px); }
+.rainbow-button:active { transform: scale(.97); }
+@keyframes rainbow-button-flow { from { background-position: 0%; } to { background-position: 200%; } }
+@media (prefers-reduced-motion: reduce) {
+  .rainbow-button, .rainbow-button::before { animation: none; transition: none; }
+}

@@ -3,6 +3,7 @@ dist
 .git
 .github
 .env
+.env.local
 .ops
 README.md
 preview.png

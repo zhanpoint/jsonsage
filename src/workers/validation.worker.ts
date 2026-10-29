@@ -11,7 +11,9 @@ self.onmessage = (event: MessageEvent<{ id: number; source: string; options: Jso
         if (code >= 0xd800 && code <= 0xdbff && source.charCodeAt(i + 1) >= 0xdc00 && source.charCodeAt(i + 1) <= 0xdfff) i++;
       }
     }
-    const result = source.length > 2_000_000 ? validateIndexed(source, options) : { ...validate(source, options), folds: undefined };
+    const result = source.trim().length === 0
+      ? { ok: false, diagnostics: [], folds: undefined }
+      : source.length > 2_000_000 ? validateIndexed(source, options) : { ...validate(source, options), folds: undefined };
     self.postMessage({ id, result: { ...result, diagnostics: diagnosticLocations(source, result.diagnostics), metrics: { lineCount, characterCount } } }, { transfer: result.folds ? [result.folds.buffer] : [] });
   }
   catch { self.postMessage({ id, result: { ok: false, diagnostics: [{ code: 'E001', message: 'Unable to check this document. Reduce its size/depth.', severity: 'error', start: 0, end: 0 }] } }); }

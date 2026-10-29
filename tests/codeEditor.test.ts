@@ -3,6 +3,31 @@ import { EditorState, type Transaction } from '@codemirror/state';
 import { history, undo, redo, undoDepth, redoDepth, isolateHistory } from '@codemirror/commands';
 import { diagnosticCount, setDiagnostics } from '@codemirror/lint';
 import { documentChange, editorDiagnostics } from '../src/lib/codeEditor';
+import { httpLink } from '../src/lib/editorLinks';
+import { documentSizeLimit, exceedsDocumentLimit } from '../src/lib/documentLimits';
+
+let limitNotices = 0;
+let limited = EditorState.create({ doc: '1234', extensions: [history(), documentSizeLimit(() => limitNotices++, 8)] });
+limited = limited.update({ changes: { from: 4, insert: '5678' } }).state;
+assert.equal(limited.doc.toString(), '12345678', 'The exact editor boundary is allowed');
+const historyBeforeLimit = undoDepth(limited);
+limited = limited.update({ changes: { from: 8, insert: '9' }, userEvent: 'input.paste' }).state;
+assert.equal(limited.doc.toString(), '12345678');
+assert.equal(limitNotices, 1);
+assert.equal(undoDepth(limited), historyBeforeLimit, 'Rejected input must not enter undo history');
+limited = limited.update({ changes: [{ from: 0, insert: 'a' }, { from: 8, insert: 'b' }] }).state;
+assert.equal(limited.doc.toString(), '12345678', 'Multi-selection edits must obey the combined limit');
+limited = limited.update({ changes: { from: 0, to: 8, insert: '{}' } }).state;
+assert.equal(limited.doc.toString(), '{}', 'Replacing a selection must subtract its old length');
+const oversized = EditorState.create({ doc: '123456789', extensions: documentSizeLimit(() => limitNotices++, 8) });
+assert.equal(oversized.update({ changes: { from: 0, to: 1 } }).state.doc.length, 8, 'Old oversized content remains reducible');
+assert.equal(exceedsDocumentLimit(4, 8, 8), false);
+assert.equal(exceedsDocumentLimit(4, 9, 8), true);
+
+for (const value of ['https://example.com/a?q=1&b=2#section', 'http://localhost:5174/path', 'HTTPS://例子.测试/图片']) {
+  assert.equal(httpLink(value), new URL(value).href);
+}
+for (const value of ['javascript:alert(1)', 'data:text/html,test', 'file:///D:/a.json', 'https://', 'https://[invalid', 'not a URL']) assert.equal(httpLink(value), null);
 
 const previous = '{"label":"😀","count":1}';
 const next = '{"label":"😀","count":200}';

@@ -56,7 +56,7 @@ npm ci
 npm run dev
 ```
 
-打开 [http://127.0.0.1:5174](http://127.0.0.1:5174) 即可使用。
+打开 [http://127.0.0.1:5174/#workspace](http://127.0.0.1:5174/#workspace) 即可使用。文件预览代理已集成在开发服务中，无需 Docker 或另启服务。
 
 **试一试**：把下面的 JSON 粘贴到代码视图，按 `Ctrl / ⌘ + Enter` 格式化，再按 `Alt + 2` 打开树形视图查看节点。
 
@@ -72,7 +72,7 @@ npm run dev
 ```
 
 - 右键任意字段，可复制它的路径。
-- 右键字符串字段选择 **文本预览**，或将光标放入字符串后点击底部 **文本预览**，即可阅读 Markdown、表格、代码块及 `$…$` / `$$…$$` 公式。阅读面板不锁定编辑器，支持原文切换和复制完整文本；源内容更改后可主动刷新。预览最多展示前 50,000 个字符，外部图片仅显示替代文字，不自动请求远程资源。
+- 将光标放入字符串后点击 **侧边预览**，即可阅读 Markdown、公式和远程文件。面板可调宽度，随原文自动更新；工具栏仅保留分页、打开原文件和关闭操作。PDF 自动去除纸张空白边缘并适应完整内容；文本最多展示前 50,000 个字符，外部图片按需加载。
 
 构建并在本地预览生产版（PWA 仅在生产构建中启用，开发模式不注册 Service Worker）：
 
@@ -94,7 +94,7 @@ npm run preview -- --host 127.0.0.1 --port 5175
 | **诊断与修复** | 中英文错误说明、行列定位、红色波浪线；修复单引号、未引号键、尾逗号、注释等输入 |
 | **结构对比** | 左右两列比较，区分新增、删除、值修改和类型变更；对象键顺序不同仍可判定相等 |
 | **类型生成** | 从样本推断 TypeScript、Python、Go、Rust 类型，本地生成，可复制或导出 |
-| **导入与导出** | 本地 UTF-8 文件选择、拖放，URL / GET cURL 导入；导出 `.json`、复制原文或格式化结果 |
+| **导入与导出** | 本地 UTF-8 文件选择、拖放，JSON 文件 URL 导入；导出 `.json`、复制原文或格式化结果 |
 | **本地历史** | 自动保存带标题和文件名的原文，也可切换为手动保存；支持搜索、置顶、重命名、删除，数据仅存于当前浏览器 |
 | **智能粘贴与脱敏** | 粘贴时识别 URL、JWT、Base64、转义 JSON；脱敏常见敏感字段、电话、邮箱和 IP 等 |
 
@@ -113,7 +113,7 @@ npm run preview -- --host 127.0.0.1 --port 5175
 | `Alt + 7` / `Alt + 8` | 对比 / 类型生成 |
 | `Alt + K` | 打开快捷键设置；检测重复键位并支持恢复默认 |
 | `Alt + H` | 打开历史记录 |
-| `Alt + N` | 新建空白标签页 |
+| `Alt + N` | 新建记录 |
 | `Mod + S` | 立即保存当前记录 |
 | `Mod + O` | 打开本地文件 |
 | `Mod + Z` / `Mod + Y` | 撤销 / 重做 |
@@ -122,9 +122,9 @@ npm run preview -- --host 127.0.0.1 --port 5175
 
 所有默认快捷键均为两键组合，其他操作可在命令面板中查看。旧默认键位会自动更新，手动自定义的键位保留；如与新默认值冲突，以自定义键位优先，受影响的默认项显示「—」，可重新设置。系统或浏览器保留的组合键可能无法覆盖。
 
-### 复制节点路径
+### 路径导航
 
-状态栏常驻当前节点路径，右键字段或点击路径后选择「复制路径」，复制 JSONPath，例如 `$.users[0].name`。
+状态栏常驻当前节点路径，点击任意层级返回父节点；数组前后切换保留字段路径，目标字段缺失时定位该数组元素。右键字段或点击「复制当前路径」可复制 JSONPath，例如 `$.users[0].name`。
 
 <details>
 <summary><strong>设置、标签页与历史记录</strong></summary>
@@ -179,10 +179,12 @@ npm run preview -- --host 127.0.0.1 --port 5175
 
 ## 部署
 
-应用构建后是纯静态资源，可托管在任何支持 **SPA 回退**，并为模块与 WASM 返回**正确 MIME 类型**的静态服务器上。PWA 和部分剪贴板功能需要 HTTPS（或 localhost）这样的安全上下文。
+前端构建产物是静态资源，可托管在支持 **SPA 回退**和正确模块/WASM MIME 类型的服务器上。`npm run dev` 和 `npm run preview` 已内置同源文件代理，单进程运行，不使用 Docker。PWA 和部分剪贴板功能需要 HTTPS（或 localhost）这样的安全上下文。
+
+静态站点如需预览禁止跨域读取的文件，在主机运行 `npm run file-proxy`，由 Node 内置 HTTP 服务监听 `127.0.0.1:8081`，再通过 Nginx 将 `/api/preview` 转发到该端口；已有主机模板包含此配置。代理复用开发环境的同一实现，不需要额外容器或转换服务。仅发布静态文件时，远程预览要求文件源站允许 CORS。
 
 <details>
-<summary><strong>Docker Compose：本地运行或服务器部署</strong></summary>
+<summary><strong>Docker Compose：已有的可选静态站点部署</strong></summary>
 
 需要 Docker Engine 和 Docker Compose v2。以下命令在项目根目录的 **Linux / macOS shell** 中执行：
 
@@ -196,7 +198,7 @@ curl -fsS http://127.0.0.1:8088/healthz
 
 `.env` 中 `APP_PORT=8088` 控制主机端口，`PUBLIC_HOST` 用于主机 Nginx 模板；修改端口后，健康检查地址也应相应修改。容器只绑定 `127.0.0.1`，公网入口需通过反向代理提供。
 
-镜像采用 Node 24 / Nginx 多阶段构建，运行时仅包含静态资源与 Nginx，使用非 root 用户、只读文件系统，并设置内存、进程和日志限制。`/healthz` 用于健康检查，`/version.json` 返回构建提交。
+镜像采用 Node 24 / Nginx 多阶段构建，运行时仅提供静态资源，使用非 root 用户、只读文件系统和资源限制。`/healthz` 用于健康检查，`/version.json` 返回构建提交。
 
 反向代理模板位于 `deploy/nginx.host.conf.template`（HTTP）和 `deploy/nginx.https.conf.template`（HTTPS，需要对应域名的证书）。渲染时只替换 `PUBLIC_HOST` 和 `APP_PORT`，保留 `$uri` 等 Nginx 自身变量。修改配置后先执行 `nginx -t`，再重载 Nginx。
 
@@ -243,11 +245,25 @@ HTTPS 证书可使用 Certbot 签发，并通过续期定时器与 Nginx 校验 
 
 </details>
 
+打开或拖入 JSON 文件时，超过 128 MiB 会在读取前取消并提示拆分；粘贴及编辑受统一的 134,217,728 字符上限保护（按 UTF-16 单位计数），包含粘贴后的现有内容，选区替换会扣除被替换部分。超限操作不写入编辑器或撤销历史，保留原有内容；提示可确认关闭或按 Esc 关闭。此上限是应用的资源保护策略，并非 JSON 格式或 `JSON.parse` 的固定限制。
+
 ## 开发与贡献
 
 技术栈：React 19 + TypeScript + Vite。编辑器、各视图和计算层相互分离，重计算在 Worker 中执行；快捷键、工具栏和命令面板共用 `src/lib/commands.ts`，避免同一操作维护多套定义。
 
-字段预览沿用可调整宽度的侧栏，支持图片、音视频、Markdown、PDF，以及 Univer 只读表格和 DOCX 正文。办公组件按需加载；SheetJS 和 Mammoth 在 Worker 内解析文件，不上传至转换服务。DOCX 展示正文及基础排版，不保证原文件的分页、图片和复杂样式还原；旧版 DOC 等格式保留原文件打开入口。文件 URL 需允许浏览器跨域读取；解析文件上限为 20 MiB、30 秒，表格上限为 50 个工作表、每表 10,000 行 / 256 列、总计 100,000 个已存储单元格。
+字段预览沿用可调整宽度的侧栏，支持图片、音视频、Markdown、PDF、PPT/PPTX，以及 Univer Web SDK 只读表格和 DOCX 正文，无需部署 Univer 后端服务。办公组件按需加载；SheetJS 和 Mammoth 在 Worker 内解析文件，不上传至转换服务。DOCX 展示正文及基础排版，不保证原文件的分页、图片和复杂样式还原；旧版 DOC 等格式保留原文件打开入口。需完整下载并解析的文件上限为 20 MiB；下载采用 30 秒无数据进展超时，接收完成后单独提供 30 秒解析与渲染预算，表格上限为 50 个工作表、每表 10,000 行 / 256 列、总计 100,000 个已存储单元格。
+
+远程文件优先由浏览器直接读取，遇到网络/CORS 拦截时通过同源文件代理读取，完整保留查询参数；无后缀链接通过同一代理读取 Content-Type 和文件名以选择预览器，优先 HEAD，不支持时仅获取 GET 响应头并终止正文。JSON 正文不会发送至代理。代理只接受公网 HTTP(S) 标准端口，不转发 Cookie、Authorization 或来源站响应头，不缓存文件；校验 DNS 并固定实际连接 IP，每次重定向重新校验，最多 3 次。每实例最多同时处理 8 个请求，超限、超时和客户端断开会终止上游流。使用项目提供的 Nginx 模板时，代理请求不写访问日志。
+
+如网络代理软件将 DNS 解析为 `198.18.*` 等虚拟地址，请在 `.env.local` 中设置 `PREVIEW_DNS_OVER_HTTPS=https://dns.google/resolve`，然后重启开发服务或代理。默认使用系统 DNS，HTTPS DNS 为可选的可信解析器，返回地址仍需通过公网校验。
+
+音视频采用 Video.js 10 的 React 组件及官方 Neutral 皮肤，按需加载，支持播放、暂停、进度、音量和倍速；视频另有全屏、画中画等能力（依浏览器支持）。控件跟随中英文及明暗主题，默认仅预加载元数据，不自动播放；浏览器直接读取媒体，不经过文档下载缓冲或 20 MiB 限制，关闭时停止播放并释放媒体源。播放取决于源站可访问性及浏览器编码支持，不转码；当前接入原生 HTML5 文件，HLS/DASH 引擎可后续按需扩展。
+
+PPT/PPTX 使用浏览器端 Web-PPT，按需加载、Worker 内解析，仅生成当前页 SVG，自动适应整页，支持翻页及安全外部链接。界面沿用当前语言与主题，幻灯片保留原稿配色；复杂字体、动画和多媒体不保证与 PowerPoint 完全一致。关闭面板终止 Worker 并释放文件资源，无需 Office、Docker 或转换服务。
+
+PDF 使用浏览器端 PDF.js，自动测量可见内容边界，去除空白纸边后按可用宽高完整显示，支持翻页、链接注释及文档内页面跳转。仅裁去外围留白，不重排或修改原文件；图片、图形、文字及链接区域均保留，空白页按原页面展示。每次仅渲染一页，边界测量复用同一画布且最长边不超过 1024 像素，最终画布限制为约 400 万像素；主题通过浏览器 SVG 色阶映射统一适配文字、表格底色和页面背景，切换主题不重新解析或渲染 PDF。PDF、DOCX 和表格中的 HTTP(S)、邮件及电话链接可打开，危险协议不会执行；表格仅展示缓存值，不执行 `HYPERLINK` 等公式。预览界面跟随当前中英文、配色和明暗主题；切换时不重新下载文件，关闭时取消当前任务并销毁文件渲染实例。字段读取与路径定位复用工作区 Worker，首次同步后仅传输文本增量；过期任务可取消。
+
+Markdown 预览支持六级标题、列表与任务列表、表格、引用、提示框、代码高亮、公式、脚注和网络图片，以及经过过滤的 HTML 图片、折叠块、上下标和键帽。远程 Markdown 文件中的相对图片地址按原文件 URL 解析；JSON 字段中的相对路径没有文件基址，需使用完整图片 URL。脚注在侧栏内跳转，图片按需加载，加载失败显示替代文字；脚本、嵌入网页及任意 HTML 样式不执行。
 
 ```text
 src/components/   编辑器、各视图、菜单与对话框
@@ -278,4 +294,4 @@ npm run build
 - **解析与转换**：[jsonc-parser](https://github.com/microsoft/node-jsonc-parser)、[lossless-json](https://github.com/josdejong/lossless-json)、[jsonrepair](https://github.com/josdejong/jsonrepair)、[quicktype](https://github.com/glideapps/quicktype)
 - **交互与可视化**：[Base UI](https://base-ui.com/)、[cmdk](https://github.com/pacocoursey/cmdk)、[TanStack Virtual](https://tanstack.com/virtual/latest)、[React Flow](https://reactflow.dev/)，界面参考 [21st](https://21st.dev/) 的组件设计
 - **离线能力**：[Vite PWA](https://vite-pwa-org.netlify.app/)
-- **文件预览**：[Univer](https://docs.univer.ai/)、[SheetJS](https://docs.sheetjs.com/)、[Mammoth](https://github.com/mwilliamson/mammoth.js)、[PDF.js](https://mozilla.github.io/pdf.js/)、[DOMPurify](https://github.com/cure53/DOMPurify)
+- **文件预览**：[Univer](https://docs.univer.ai/)、[SheetJS](https://docs.sheetjs.com/)、[Mammoth](https://github.com/mwilliamson/mammoth.js)、[PDF.js](https://mozilla.github.io/pdf.js/)、[Web-PPT](https://github.com/unStone/web-ppt)、[Video.js](https://videojs.org/docs/guides/installation/react)、[DOMPurify](https://github.com/cure53/DOMPurify)

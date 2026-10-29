@@ -9,6 +9,7 @@ import type { JsonDiagnostic } from '../lib/json/engine';
 import GeneratedCode from './GeneratedCode';
 import { SelectField } from './ui/SelectField';
 import { commandDefinitions } from '../lib/commands';
+import ResizableColumns from './ResizableColumns';
 
 const noop = () => {};
 const noDiagnostics: JsonDiagnostic[] = [];
@@ -35,16 +36,17 @@ export default function AnalysisTools({ mode, source, onChange, other, onOtherCh
   const editorProps = { managedFormat: true, language, theme, indent, diagnostics: noDiagnostics, onHistory, onContextPath: noop };
   const run = () => analysis.run(mode === 'types' ? { kind: mode, source, jsonc, indent, target } : { kind: 'diff', source, other, jsonc });
   return <section className="analysis-tools" data-tone={commandDefinitions[mode].tone} aria-label={mode === 'types' ? (zh ? '类型生成' : 'Type generation') : 'JSON Diff'}>
-    {mode === 'diff' && <div className="diff-editors">
-      <div><header>{zh ? '原始 JSON' : 'Original JSON'}</header><CodeEditor {...editorProps} source={source} onChange={onChange} onPendingChange={pending => { if (pending) { leftTransform.cancel(); analysis.reset(); } }} onFormat={() => leftTransform.run('format', result => { if (result.ok) onChange(result.source); })} editorRef={left} label={zh ? '原始 JSON' : 'Original JSON'} highlights={result?.kind === 'diff' ? result.left : undefined} /></div>
+    {mode === 'diff' && <ResizableColumns className="diff-editors" label={zh ? '调整对比视图宽度' : 'Resize comparison'} secondary={
       <div><header>{zh ? '对比 JSON' : 'Compared JSON'}</header><CodeEditor {...editorProps} source={other} onChange={setOther} onPendingChange={pending => { if (pending) { rightTransform.cancel(); analysis.reset(); } }} onFormat={() => rightTransform.run('format', result => { if (result.ok) setOther(result.source); })} editorRef={right} label={zh ? '对比 JSON' : 'Compared JSON'} highlights={result?.kind === 'diff' ? result.right : undefined} /></div>
-    </div>}
+    }>
+      <div><header>{zh ? '原始 JSON' : 'Original JSON'}</header><CodeEditor {...editorProps} source={source} onChange={onChange} onPendingChange={pending => { if (pending) { leftTransform.cancel(); analysis.reset(); } }} onFormat={() => leftTransform.run('format', result => { if (result.ok) onChange(result.source); })} editorRef={left} label={zh ? '原始 JSON' : 'Original JSON'} highlights={result?.kind === 'diff' ? result.left : undefined} /></div>
+    </ResizableColumns>}
     <form className="analysis-toolbar" onSubmit={event => { event.preventDefault(); run(); }}>
       {mode === 'types' ? <SelectField label={zh ? '目标语言' : 'Target language'} value={target} items={targetLanguages} onChange={setTarget} /> : <span className="diff-legend"><i className="diff-create" />{zh ? '新增' : 'Added'} <i className="diff-change" />{zh ? '修改' : 'Changed'} <i className="diff-type" />{zh ? '类型变更' : 'Type changed'} <i className="diff-remove" />{zh ? '删除' : 'Removed'}</span>}
       {analysis.busy ? <button type="button" onClick={analysis.cancel}><Square size={14} />{zh ? '取消' : 'Cancel'}</button> : <button type="submit">{mode === 'types' ? <FileCode2 size={14} /> : <GitCompareArrows size={14} />}{mode === 'diff' ? (zh ? '对比' : 'Compare') : (zh ? '运行' : 'Run')}</button>}
     </form>
     {analysis.busy && <p className="analysis-message" role="status">{zh ? '正在本地处理…' : 'Processing locally…'}</p>}
-    {!result && !analysis.error && !analysis.busy && <p className="analysis-message">{mode === 'types' ? (zh ? '从当前 JSON 推断类型，生成后请核对业务约束。' : 'Infer types from the current JSON; review your domain constraints.') : (zh ? '按字段和值对比，忽略对象键的排列顺序；数组按索引比较。' : 'Compare fields and values, ignoring object key order. Arrays compare by index.')}</p>}
+    {mode === 'diff' && !result && !analysis.error && !analysis.busy && <p className="analysis-message">{zh ? '按字段和值对比，忽略对象键的排列顺序；数组按索引比较。' : 'Compare fields and values, ignoring object key order. Arrays compare by index.'}</p>}
     {result?.kind === 'output' && <GeneratedCode source={result.source} format={result.format} language={language} theme={theme} indent={indent} onNotice={onNotice} />}
     {result && result.kind !== 'output' && <>
       <p className="analysis-message" role="status">{`${result.total} ${zh ? '处差异' : 'differences'}`}{(result.total > result.rows.length) && (zh ? ' · 仅展示前 5,000 项，请缩小范围。' : ' · Showing the first 5,000 entries.')}</p>

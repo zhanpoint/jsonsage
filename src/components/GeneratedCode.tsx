@@ -24,10 +24,10 @@ export default function GeneratedCode({ source: initial, format, language, theme
         if (event.data.id !== sequence.current) return;
         setDiagnostics(event.data.diagnostics ?? []); setError(event.data.error ?? '');
       };
-      worker.onerror = () => { setError(zh ? '检查器加载失败' : 'Unable to load checker'); worker.terminate(); workerRef.current = null; };
+      worker.onerror = () => { setError('CHECKER_UNAVAILABLE'); worker.terminate(); workerRef.current = null; };
       return () => { worker.terminate(); workerRef.current = null; };
     } catch (cause) { setError(String(cause)); }
-  }, [zh]);
+  }, []);
   useEffect(() => {
     const id = ++sequence.current;
     if (!workerRef.current) return;
@@ -36,7 +36,7 @@ export default function GeneratedCode({ source: initial, format, language, theme
       workerRef.current?.postMessage({ id, source, language: format });
     }, 300);
     return () => clearTimeout(timer);
-  }, [source, format, zh]);
+  }, [source, format]);
   async function copy() {
     try { await navigator.clipboard.writeText(source); onNotice(zh ? '已复制' : 'Copied'); }
     catch { onNotice(zh ? '复制失败，请检查剪贴板权限。' : 'Clipboard permission required.'); }
@@ -49,7 +49,7 @@ export default function GeneratedCode({ source: initial, format, language, theme
   }
   return <>
     <div className="analysis-toolbar output-toolbar"><button onClick={() => void copy()}><Copy size={14} />{zh ? '复制' : 'Copy'}</button><button onClick={download}><Download size={14} />{zh ? '导出' : 'Export'}</button></div>
-    {error && <p className="analysis-message error" role="alert">{error}</p>}
+    {error && <p className="analysis-message error" role="alert">{error === 'CHECKER_UNAVAILABLE' ? (zh ? '检查器加载失败' : 'Unable to load checker') : error}</p>}
     <CodeEditor source={source} onChange={setSource} codeLanguage={format} diagnostics={diagnostics} language={language} theme={theme} indent={indent} editorRef={editor} label={zh ? '生成代码' : 'Generated code'} onHistory={noop} onFormat={noop} onContextPath={noop} managedFormat />
   </>;
 }

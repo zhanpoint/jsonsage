@@ -41,7 +41,7 @@ export function DocumentTabs({ tabs, activeId, language, onSelect, onClose, onPi
         </ContextMenu.Root>;
       })}
     </Tabs.List><div className="document-tab-actions">
-      <HelpTooltip label={`${text('新建标签页', 'New tab')} · ${newShortcut}`}><button className="record-icon" aria-label={text('新建标签页', 'New tab')} onClick={onNew}><Plus size={18} /></button></HelpTooltip>
+      <HelpTooltip label={`${text('新建记录', 'New record')} · ${newShortcut}`}><button className="record-icon" aria-label={text('新建记录', 'New record')} onClick={onNew}><Plus size={18} /></button></HelpTooltip>
       <HelpTooltip label={`${text('保存记录', 'Save record')} · ${saveShortcut}`}><button className="record-icon tab-save" aria-label={text('保存记录', 'Save record')} onClick={onSave}><Save size={16} /></button></HelpTooltip>
       {history}
     </div></div>

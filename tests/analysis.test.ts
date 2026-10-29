@@ -16,11 +16,7 @@ const reserved = analyze({ kind: 'diff', source: '{"constructor":1,"__proto__":2
 assert.equal(reserved.rows.length, 2);
 assert.equal(analyze({ kind: 'diff', source: 'null', other: '[]', jsonc: false }).rows.length, 1);
 assert.throws(() => analyze({ kind: 'diff', source: '{', other: '{}', jsonc: false }));
-const request = importRequest('curl "https://example.com/data" -H "Accept: application/json" -X GET -L');
-assert.equal(request.url, 'https://example.com/data');
-assert.equal(request.headers.get('Accept'), 'application/json');
-assert.throws(() => importRequest('curl https://example.com -X POST'));
-assert.throws(() => importRequest('curl https://example.com; echo token'));
-assert.throws(() => importRequest('curl $TOKEN'));
+assert.equal(importRequest(' https://example.com/data.json '), 'https://example.com/data.json');
+assert.throws(() => importRequest('https://user:password@example.com/data.json'));
 assert.throws(() => importRequest('file:///etc/passwd'));
 console.log('Semantic diff and safe GET import checks passed.');

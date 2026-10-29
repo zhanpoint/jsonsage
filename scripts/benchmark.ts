@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { validate, validateIndexed } from '../src/lib/json/engine';
 import { indexJsonFolds } from '../src/lib/json/foldIndex';
-import { branch } from '../src/lib/json/branches';
+import { treePage } from '../src/lib/json/treePage';
 import { largeGraph, largeTable } from '../src/lib/json/largeViews';
 import { beautifyJson, minifyJson } from '../src/lib/json/transforms';
 const row = '  {"id":18446744073709551615,"name":"Synthetic test","email":"demo@example.com","payload":"' + 'x'.repeat(128) + '"}';
@@ -18,7 +18,7 @@ function measure(name: string, work: () => void) {
 measure('validate', () => { if (!validate(source).ok) throw new Error('Invalid fixture'); });
 measure('validate+separate-folds', () => { if (!validate(source).ok) throw new Error('Invalid fixture'); indexJsonFolds(source); });
 measure('validate+shared-folds', () => { const result = validateIndexed(source); if (!result.ok || result.folds.length !== (rows + 2) * 2) throw new Error('Invalid shared index'); });
-measure('branch', () => { if (branch(source, ['items']).rows.length !== 300) throw new Error('Branch failed'); });
+measure('tree-page', () => { if (treePage(source, { all: true, root: true, offsets: [] }).rows.length !== 300) throw new Error('Tree page failed'); });
 measure('table', () => { if (largeTable(source, ['items'], 0).total !== rows) throw new Error('Table failed'); });
 measure('graph', () => { if (largeGraph(source, 3).items.length !== 300) throw new Error('Graph failed'); });
 measure('minify', () => { const result = minifyJson(source); if (!result.ok || !result.source.includes('18446744073709551615')) throw new Error('Minify failed'); });

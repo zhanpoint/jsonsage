@@ -3,7 +3,7 @@ export type ShortcutMap = Record<CommandId, string>;
 type KeyEvent = Pick<KeyboardEvent, 'code' | 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'>;
 const modifiers = new Set(['Control', 'Meta', 'Alt', 'Shift']);
 // Snapshot of v1 defaults: only user overrides survive the move to simpler defaults.
-const legacyDefaults: ShortcutMap = {
+const legacyDefaults: Partial<ShortcutMap> = {
   palette: 'Mod+K', history: 'Mod+Alt+H', newHistory: 'Mod+Alt+N', saveHistory: 'Mod+Alt+S',
   shortcuts: 'Mod+Alt+K', format: 'Mod+Enter', repair: 'Mod+Alt+R', validate: 'Mod+Alt+V',
   minify: 'Mod+Alt+M', mask: 'Mod+Alt+D', search: 'Mod+F', open: 'Mod+Alt+O',

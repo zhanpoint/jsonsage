@@ -53,9 +53,14 @@ function decode(input: JsonInput): { source: string; diagnostics: JsonDiagnostic
 }
 
 function lineColumn(source: string, offset: number): { line: number; column: number } {
-  const before = source.slice(0, Math.max(0, offset));
-  const lines = before.split(/\r\n|\r|\n/);
-  return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
+  let line = 1, column = 1;
+  const end = Math.min(source.length, Math.max(0, offset));
+  for (let i = 0; i < end; i++) {
+    if (source[i] === '\r') { line++; column = 1; }
+    else if (source[i] === '\n') { if (source[i - 1] !== '\r') line++; column = 1; }
+    else column++;
+  }
+  return { line, column };
 }
 
 function scan(source: string, options: JsonOptions): { normalized: string; diagnostics: JsonDiagnostic[] } {

@@ -4,7 +4,10 @@ import { fetchDocument, readLocalDocument, MAX_IMPORT_BYTES } from '../src/lib/i
 const source = '{"name":"中文😀","id":18446744073709551615}';
 const bytes = new TextEncoder().encode(source);
 assert.equal(await readLocalDocument({ size: bytes.length, arrayBuffer: async () => bytes.buffer }), source);
-await assert.rejects(readLocalDocument({ size: MAX_IMPORT_BYTES + 1, arrayBuffer: async () => new ArrayBuffer(0) }), /FILE_TOO_LARGE/);
+let oversizedRead = false;
+await assert.rejects(readLocalDocument({ size: MAX_IMPORT_BYTES + 1, arrayBuffer: async () => { oversizedRead = true; return new ArrayBuffer(0); } }), /FILE_TOO_LARGE/);
+assert.equal(oversizedRead, false, 'Oversized files must be rejected before allocating or reading their contents');
+assert.equal(await readLocalDocument({ size: MAX_IMPORT_BYTES, arrayBuffer: async () => bytes.buffer }), source, 'The file-size boundary is inclusive');
 await assert.rejects(readLocalDocument({ size: 1, arrayBuffer: async () => new Uint8Array([0xff]).buffer }), TypeError);
 
 const originalFetch = globalThis.fetch;
@@ -12,12 +15,12 @@ try {
   const boundary = bytes.indexOf(0xe4) + 1;
   globalThis.fetch = async (_url, init) => {
     assert.equal(init?.credentials, 'omit'); assert.equal(init?.referrerPolicy, 'no-referrer');
-    assert.equal((init?.headers as Headers).get('Accept'), 'application/json');
+    assert.equal(new Headers(init?.headers).get('Accept'), 'application/json');
     return new Response(new ReadableStream({ start(controller) {
       controller.enqueue(bytes.slice(0, boundary)); controller.enqueue(bytes.slice(boundary)); controller.close();
     } }));
   };
-  assert.equal(await fetchDocument('curl https://example.com/test.json -H "Accept: application/json"', new AbortController().signal), source, 'UTF-8 characters split across chunks must remain intact');
+  assert.equal(await fetchDocument('https://example.com/test.json', new AbortController().signal), source, 'UTF-8 characters split across chunks must remain intact');
   globalThis.fetch = async () => new Response(new Uint8Array([0xff]));
   await assert.rejects(fetchDocument('https://example.com/test.json', new AbortController().signal), TypeError);
   let cancelled = false;

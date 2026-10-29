@@ -1,8 +1,10 @@
 import { read, utils, type WorkBook } from 'xlsx';
 import type { IWorkbookData } from '@univerjs/presets';
+import { RichTextBuilder } from '@univerjs/core';
+import { previewHref } from './resourcePreview';
 
 /** Display cached values; never execute formulas or external workbook links. */
-export function workbookPreview(bytes: ArrayBuffer, name: string): Partial<IWorkbookData> {
+export function workbookPreview(bytes: ArrayBuffer, name: string, sourceUrl?: string): Partial<IWorkbookData> {
   const isText = /\.(csv|tsv)$/i.test(name);
   const book: WorkBook = read(isText ? new TextDecoder().decode(bytes) : bytes, {
     type: isText ? 'string' : 'array', raw: isText, cellFormula: false, cellHTML: false, sheetRows: 10_001,
@@ -21,7 +23,11 @@ export function workbookPreview(bytes: ArrayBuffer, name: string): Partial<IWork
       const { r, c } = utils.decode_cell(address);
       const cell = source[address];
       if (cell.v == null) continue;
-      (cellData[r] ??= {})[c] = { v: cell.w ?? utils.format_cell(cell), t: 1 };
+      const text = cell.w ?? utils.format_cell(cell);
+      const href = cell.l?.Target && previewHref(cell.l.Target, sourceUrl);
+      (cellData[r] ??= {})[c] = href
+        ? { p: new RichTextBuilder({ id: `link-${r}-${c}`, body: { dataStream: '\r\n' }, documentStyle: {} }).link(text, href).getData() }
+        : { v: text, t: 1 };
     }
     const id = `sheet-${index}`;
     sheets[id] = { id, name: title, rowCount: Math.max(range.e.r + 1, 30), columnCount: Math.max(range.e.c + 1, 10), cellData,

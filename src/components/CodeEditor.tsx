@@ -6,7 +6,8 @@ import { codeLanguage, type CodeLanguage } from '../lib/codeLanguages';
 import { bracketMatching, foldAll, foldEffect, foldKeymap, foldedRanges, indentOnInput, indentUnit, unfoldAll, unfoldEffect } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap, indentWithTab, undo, redo, undoDepth, redoDepth, isolateHistory } from '@codemirror/commands';
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
-import { search, searchKeymap, openSearchPanel } from '@codemirror/search';
+import { search, searchKeymap, openSearchPanel, closeSearchPanel, searchPanelOpen } from '@codemirror/search';
+import { createSearchPanel, openReplacePanel } from '../lib/searchPanel';
 import type { JsonDiagnostic } from '../lib/json/engine';
 import { indentationOptions, type Indent } from '../lib/json/transforms';
 import { editorTheme, chineseEditorPhrases } from '../lib/editorTheme';
@@ -16,6 +17,9 @@ import { documentChange, editorDiagnostics, registerEditor, type EditorHandle, t
 import { smartCandidate } from '../lib/json/smartInput';
 import { LARGE_DOCUMENT, largeJsonLanguage, setFoldIndex, foldIndex } from '../lib/largeJsonLanguage';
 import { inlineFolding } from '../lib/inlineFolding';
+import { editorLinks } from '../lib/editorLinks';
+import { documentSizeLimit, exceedsDocumentLimit, MAX_DOCUMENT_CHARACTERS } from '../lib/documentLimits';
+import DocumentLimitDialog from './DocumentLimitDialog';
 
 export type { EditorHandle, HistoryState } from '../lib/codeEditor';
 type Props = {
@@ -45,6 +49,7 @@ export default function CodeEditor(props: Props) {
   const source = useRef(props.source);
   const pendingSnapshot = useRef(false);
   const [documentRevision, setDocumentRevision] = useState(0);
+  const [sizeLimitOpen, setSizeLimitOpen] = useState(false);
   const compartments = useRef({ indent: new Compartment(), theme: new Compartment(), label: new Compartment(), syntax: new Compartment(), readOnly: new Compartment() });
   const switchDocument = useRef<((props: Props) => void) | null>(null);
   const documents = useRef(new Map<string, { state: EditorState; source: string; top: number; left: number }>());
@@ -69,14 +74,16 @@ export default function CodeEditor(props: Props) {
     const createState = (document: Props) => EditorState.create({
         doc: document.source,
         extensions: [
+          documentSizeLimit(() => setSizeLimitOpen(true)),
           config.syntax.of(document.codeLanguage ? codeLanguage(document.codeLanguage) : document.source.length > LARGE_DOCUMENT ? largeJsonLanguage : json()), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
-          drawSelection(), highlightActiveLine(), highlightActiveLineGutter(),
-          history(), search({ top: true }),
+          drawSelection(), highlightActiveLine(), highlightActiveLineGutter(), editorLinks,
+          history(), search({ top: true, createPanel: createSearchPanel }),
           config.readOnly.of([EditorState.readOnly.of(!!initial.readOnly), EditorView.editable.of(!initial.readOnly)]),
           config.indent.of(indentation(initial.indent)), config.theme.of(editorTheme(initial.theme === 'dark')),
           config.label.of([EditorView.contentAttributes.of({ 'aria-label': initial.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(initial.language === 'zh' ? chineseEditorPhrases : {})]),
           keymap.of([
             ...(!initial.managedFormat ? [{ key: 'Mod-Enter', run: format }] : []),
+            { key: 'Mod-h', run: openReplacePanel, scope: 'editor search-panel', preventDefault: true },
             indentWithTab, ...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap,
           ]),
           EditorView.updateListener.of(update => {
@@ -99,8 +106,12 @@ export default function CodeEditor(props: Props) {
           }),
           EditorView.domEventHandlers({ blur() { flush(); return false; }, paste(event, editor) {
             const text = event.clipboardData?.getData('text/plain');
-            if (!text || !latest.current.onPaste || !smartCandidate(text)) return false;
+            if (!text) return false;
             const selection = editor.state.selection.main;
+            if (text.length > MAX_DOCUMENT_CHARACTERS || (editor.state.selection.ranges.length === 1 && exceedsDocumentLimit(editor.state.doc.length, editor.state.doc.length - (selection.to - selection.from) + text.length))) {
+              event.preventDefault(); setSizeLimitOpen(true); return true;
+            }
+            if (!latest.current.onPaste || !smartCandidate(text)) return false;
             const pasted = editor.state.toText(text);
             const end = selection.from + pasted.length;
             event.preventDefault();
@@ -137,7 +148,7 @@ export default function CodeEditor(props: Props) {
         instance.dispatch({ effects });
       },
       history: () => latest.current.readOnly ? { undo: false, redo: false } : { undo: undoDepth(instance.state) > 0, redo: redoDepth(instance.state) > 0 },
-      undo: () => { undo(instance); }, redo: () => { redo(instance); }, search: () => { openSearchPanel(instance); },
+      undo: () => { undo(instance); }, redo: () => { redo(instance); }, search: () => { (searchPanelOpen(instance.state) ? closeSearchPanel : openSearchPanel)(instance); },
       locate(start, end, focus = true) {
         const from = Math.max(0, Math.min(start, instance.state.doc.length));
         const to = Math.max(from, Math.min(end, instance.state.doc.length));
@@ -228,5 +239,5 @@ export default function CodeEditor(props: Props) {
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.theme.reconfigure(editorTheme(props.theme === 'dark')) }); }, [props.theme, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: compartments.current.label.reconfigure([EditorView.contentAttributes.of({ 'aria-label': props.label, 'aria-describedby': 'editor-help' }), EditorState.phrases.of(props.language === 'zh' ? chineseEditorPhrases : {})]) }); }, [props.label, props.language, props.documentId]);
   useEffect(() => { view.current?.dispatch({ effects: setDiffHighlights.of(props.highlights ?? []) }); }, [props.highlights, props.documentId]);
-  return <div ref={host} className="code-editor-host" />;
+  return <><div ref={host} className="code-editor-host" />{sizeLimitOpen && <DocumentLimitDialog kind="text" language={props.language} onClose={() => setSizeLimitOpen(false)} />}</>;
 }

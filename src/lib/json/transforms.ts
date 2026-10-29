@@ -66,11 +66,16 @@ export function beautifyJson(source: string, indent: Indent = '2', options: Json
 
 export function minifyJson(source: string, options: JsonOptions = {}): TransformResult {
   if (!validate(source, options).ok) return { ok: false, source };
-  if (isRecordStream(source)) return { ok: true, source: source.split('\n').map(line => line.trim() ? minifyJson(line, options).source : line).join('\n') };
+  const records = isRecordStream(source);
   const scanner = createScanner(source);
   const output = textWriter();
+  let depth = 0;
   for (let token = scanner.scan(); token !== tokens.eof; token = scanner.scan()) {
+    // Record separators are structural, unlike formatting inside each JSON value.
+    if (records && token === tokens.lineBreak && depth === 0) output.append(source.slice(scanner.getTokenOffset(), scanner.getTokenOffset() + scanner.getTokenLength()));
     if (token === tokens.whitespace || token === tokens.lineBreak) continue;
+    if (token === 1 || token === 3) depth++;
+    else if (token === 2 || token === 4) depth--;
     output.append(source.slice(scanner.getTokenOffset(), scanner.getTokenOffset() + scanner.getTokenLength()));
     // A line comment requires a newline; removing it would swallow the next token.
     if (token === tokens.lineComment) output.append('\n');
