@@ -8,8 +8,7 @@ main() {
         return 1
     }
     export APP_REVISION=$revision JSONSAGE_IMAGE="jsonsage:$revision"
-    # Only these two non-secret runtime settings are read from the server file.
-    local APP_PORT PUBLIC_HOST
+    local APP_PORT
     source .env
     [[ $APP_PORT =~ ^[0-9]{1,5}$ ]] && ((10#$APP_PORT > 0 && 10#$APP_PORT < 65536)) || {
         printf 'APP_PORT must be a valid TCP port.\n' >&2
@@ -49,6 +48,14 @@ main() {
     fi
     install -m 755 deploy/ssh-entrypoint.sh .ops/ssh-entrypoint.sh
     printf '%s\n' "$revision" > .ops/deployed-revision
+    # Retain the active release and its rollback image; Docker refuses to remove
+    # any image still referenced by another container.
+    local image
+    while IFS= read -r image; do
+        [[ $image =~ ^jsonsage:[0-9a-f]{40}$ ]] || continue
+        [[ $image == "$JSONSAGE_IMAGE" || $image == "$previous_image" ]] && continue
+        docker image rm "$image" >/dev/null || printf 'Could not remove old image %s\n' "$image" >&2
+    done < <(docker image ls jsonsage --format '{{.Repository}}:{{.Tag}}')
     printf 'DEPLOYED %s\n' "$revision"
 }
 main "$@"

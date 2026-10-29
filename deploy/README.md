@@ -12,6 +12,12 @@ without replacing the running container. The restricted SSH entrypoint fetches
 the requested main revision and skips superseded releases. Activation failures
 restore the previous image.
 
+Successful releases retain the active image and the previous image for rollback,
+and remove older JsonSage release tags. Images used by containers cannot be removed.
+The production Git checkout may use sparse checkout containing only
+`compose.yml`, `.gitignore`, and the deployment scripts and documentation.
+Frontend sources, dependencies and build tooling are unnecessary on production.
+
 The Compose memory limit applies to the running application only. Docker builds
 are separate workloads and must remain on CI runners, especially when the host
 also runs other applications. Swap is not a substitute for this separation.

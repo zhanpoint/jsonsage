@@ -23,6 +23,7 @@ case "$*" in
         else printf '%s\n' "$REVISION"; fi ;;
     *'org.opencontainers.image.revision'*) printf '%s\n' "$PREVIOUS" ;;
     'image load') [[ $SCENARIO != load-failure ]] ;;
+    'image ls jsonsage '*) printf 'jsonsage:%s\njsonsage:%s\njsonsage:%s\njsonsage:latest\n' "$REVISION" "$PREVIOUS" "$OLDER" ;;
     'compose up '* )
         if [[ $APP_REVISION == "$REVISION" && $SCENARIO == start-failure ]]; then exit 1; fi
         if [[ $SCENARIO == version-failure && $APP_REVISION == "$REVISION" ]]; then
@@ -40,6 +41,7 @@ chmod +x "$workspace/bin/"*
 export PATH="$workspace/bin:$PATH"
 export REVISION=1111111111111111111111111111111111111111
 export PREVIOUS=2222222222222222222222222222222222222222
+export OLDER=3333333333333333333333333333333333333333
 export CALLS="$workspace/calls" ACTIVE="$workspace/active" SCENARIO
 cd "$workspace"
 run_release() {
@@ -51,10 +53,15 @@ run_release() {
 SCENARIO=success
 run_release
 test "$(cat .ops/deployed-revision)" = "$REVISION"
+grep -Fq "image rm jsonsage:$OLDER" "$CALLS"
+if grep -Eq "image rm jsonsage:($REVISION|$PREVIOUS|latest)" "$CALLS"; then
+    printf 'Cleanup removed a retained image.\n' >&2; exit 1
+fi
 for SCENARIO in start-failure version-failure; do
     if run_release; then printf 'A failed release reported success.\n' >&2; exit 1; fi
     test "$(cat "$ACTIVE")" = "$PREVIOUS"
     grep -Fq "jsonsage:$PREVIOUS|compose up" "$CALLS"
+    if grep -q 'image rm' "$CALLS"; then printf 'Failed releases must not prune images.\n' >&2; exit 1; fi
 done
 for SCENARIO in load-failure image-mismatch; do
     if run_release; then exit 1; fi
