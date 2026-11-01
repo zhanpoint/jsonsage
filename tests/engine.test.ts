@@ -25,7 +25,7 @@ for (const [text, code] of [
 }
 const missingColon = validate('{\r\n  "中😀" 1\r\n}').diagnostics.find((item) => item.code === 'S5')!;
 assert.equal(missingColon.start, 11);
-assert.equal(validate('{"a":1').diagnostics.find((item) => item.code === 'S7')?.start, 6);
+assert.equal(validate('{"a":1 "b":2 "c":3}').diagnostics.length, 1, 'cascading syntax errors are collapsed to the root error');
 assert.equal(validate('').ok, false);
 assert.equal(validate('// hi\n{}').ok, false);
 assert.equal(validate('// hi\n{}', { mode: 'jsonc' }).ok, true);

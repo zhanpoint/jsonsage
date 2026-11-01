@@ -80,7 +80,7 @@ to { opacity: 1; transform: translateY(0); }
 .workspace { width: calc(100% - 2 * var(--page-gutter)); margin: 0 auto; padding: 20px 0 24px; }
 .reading-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
 .editor-card,
-.details-card { overflow: hidden; border: 1px solid #e3e6ec; border-radius: 11px; background: white; box-shadow: 0 2px 5px #18233d05, 0 12px 32px #18233d05; }
+.details-card { overflow: hidden; overflow-anchor: none; border: 1px solid #e3e6ec; border-radius: 11px; background: white; box-shadow: 0 2px 5px #18233d05, 0 12px 32px #18233d05; }
 .editor-card { overflow: visible; }
 .editor-toolbar { min-height: 49px; padding: 8px 12px; display: flex; gap: 12px; align-items: center; overflow-x: auto; border-bottom: 1px solid var(--tip-border); }
 .toolbar-actions { display: flex; flex-shrink: 0; gap: 3px; align-items: center; justify-content: flex-end; margin-left: auto; }

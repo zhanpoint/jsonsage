@@ -12,7 +12,10 @@ function card(value: string) {
   }
   return digits.length >= 13 && digits.length <= 19 && sum % 10 === 0;
 }
-const secretKey = /(?:password|passwd|pwd|secret|token|authorization|api[_-]?key|private[_-]?key)/i;
+const secretKey = /(?:^|[_-])(?:password|passwd|pwd|secret|token|authorization|api[_-]?key|private[_-]?key|key)(?:$|[_-])/i;
+function isSensitiveKey(value: string) {
+  return secretKey.test(value) || /^(?:api|private)?key$/i.test(value);
+}
 function maskText(value: string): string {
   return value
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
@@ -31,8 +34,11 @@ export function maskJson(source: string, options: JsonOptions = {}) {
   const parts: string[] = [];
   let end = 0, count = 0;
   const replace = (offset: number, length: number, text: string) => { parts.push(source.slice(end, offset), text); end = offset + length; count++; };
-  visit(source, { onLiteralValue(value, offset, length, _line, _column, path) {
-    const sensitive = path().some(key => typeof key === 'string' && secretKey.test(key));
+  visit(source, { onObjectProperty(key, offset, length) {
+    if (!isSensitiveKey(key)) return;
+    replace(offset, length, JSON.stringify('[redacted_key]'));
+  }, onLiteralValue(value, offset, length, _line, _column, path) {
+    const sensitive = path().some(key => typeof key === 'string' && isSensitiveKey(key));
     const raw = typeof value === 'number' ? source.slice(offset, offset + length) : undefined;
     const numeric = raw === undefined ? undefined : maskText(raw);
     const next = sensitive && value !== null ? '[redacted]' : typeof value === 'string' ? maskText(value) : raw !== undefined && numeric !== raw ? numeric : value;

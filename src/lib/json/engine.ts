@@ -194,9 +194,14 @@ function run(input: JsonInput, options: JsonOptions, deserialize = true, folds?:
   }
 
   const hasErrors = all.some((item) => item.severity === 'error');
-  // Prioritize errors before applying the cap so numerous warnings cannot hide invalidity.
-  const resultDiagnostics = [...all.filter((item) => item.severity === 'error'), ...all.filter((item) => item.severity === 'warning')]
-    .slice(0, MAX_DIAGNOSTICS).sort((left, right) => left.start - right.start);
+  // Once parsing has failed, later parser messages are usually consequences of
+  // the first broken token (for example, a missing comma causes many fake
+  // "expected value" errors). Surface the earliest error as the actionable root
+  // cause and keep warnings only when the document has no syntax errors.
+  const firstError = all.filter(item => item.severity === 'error').sort((left, right) => left.start - right.start)[0];
+  const resultDiagnostics = firstError
+    ? [firstError]
+    : all.filter(item => item.severity === 'warning').slice(0, MAX_DIAGNOSTICS).sort((left, right) => left.start - right.start);
   return { ok: !hasErrors, value, diagnostics: resultDiagnostics };
 }
 

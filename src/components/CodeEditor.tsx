@@ -18,6 +18,7 @@ import { smartCandidate } from '../lib/json/smartInput';
 import { LARGE_DOCUMENT, largeJsonLanguage, setFoldIndex, foldIndex } from '../lib/largeJsonLanguage';
 import { inlineFolding } from '../lib/inlineFolding';
 import { editorLinks } from '../lib/editorLinks';
+import { maskedHighlights } from '../lib/maskedHighlights';
 import { documentSizeLimit, exceedsDocumentLimit, MAX_DOCUMENT_CHARACTERS } from '../lib/documentLimits';
 import DocumentLimitDialog from './DocumentLimitDialog';
 
@@ -76,7 +77,7 @@ export default function CodeEditor(props: Props) {
         extensions: [
           documentSizeLimit(() => setSizeLimitOpen(true)),
           config.syntax.of(document.codeLanguage ? codeLanguage(document.codeLanguage) : document.source.length > LARGE_DOCUMENT ? largeJsonLanguage : json()), diffHighlights, lintGutter(), lineNumbers(), inlineFolding, bracketMatching(), indentOnInput(),
-          drawSelection(), highlightActiveLine(), highlightActiveLineGutter(), editorLinks,
+          drawSelection(), highlightActiveLine(), highlightActiveLineGutter(), editorLinks, maskedHighlights,
           history(), search({ top: true, createPanel: createSearchPanel }),
           config.readOnly.of([EditorState.readOnly.of(!!initial.readOnly), EditorView.editable.of(!initial.readOnly)]),
           config.indent.of(indentation(initial.indent)), config.theme.of(editorTheme(initial.theme === 'dark')),

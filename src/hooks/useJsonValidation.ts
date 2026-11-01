@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { JsonOptions, ValidationResult } from '../lib/json/engine';
+import { validate, type JsonOptions, type ValidationResult } from '../lib/json/engine';
 type Metrics = { lineCount: number; characterCount: number };
 type Result = ValidationResult & { metrics?: Metrics; folds?: Uint32Array };
 type Options = Pick<JsonOptions, 'mode' | 'duplicateKeys'>;
@@ -12,7 +12,15 @@ export function useJsonValidation(source: string, options: Options) {
     let worker: Worker | undefined;
     const timer = window.setTimeout(() => {
       const fail = () => {
-        if (id === sequence.current) setResult({ source, mode, duplicateKeys, value: { ok: false, diagnostics: [{ code: 'E001', message: 'Unable to check this document. Reload or reduce its size/depth.', severity: 'error', start: 0, end: 0 }] } });
+        if (id !== sequence.current) return;
+        // A worker can be terminated by the browser when the tab is backgrounded or
+        // under memory pressure. Keep validation reliable by falling back locally
+        // instead of reporting a valid document as a syntax error.
+        try {
+          setResult({ source, mode, duplicateKeys, value: validate(source, { mode, duplicateKeys }) });
+        } catch {
+          setResult({ source, mode, duplicateKeys, value: { ok: false, diagnostics: [{ code: 'E001', message: 'Unable to check this document. Reload or reduce its size/depth.', severity: 'error', start: 0, end: 0 }] } });
+        }
       };
       try {
         worker = new Worker(new URL('../workers/validation.worker.ts', import.meta.url), { type: 'module' });
@@ -22,7 +30,7 @@ export function useJsonValidation(source: string, options: Options) {
         worker.onerror = () => { worker?.terminate(); fail(); };
         worker.postMessage({ id, source, options: { mode, duplicateKeys } });
       } catch { fail(); }
-    }, 100);
+    }, 40);
     return () => { window.clearTimeout(timer); if (sequence.current === id) sequence.current++; worker?.terminate(); };
   }, [source, mode, duplicateKeys]);
   const current = result?.source === source && result.mode === mode && result.duplicateKeys === duplicateKeys;

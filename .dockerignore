@@ -6,7 +6,8 @@ dist
 .env.local
 .ops
 README.md
-preview.png
+README.zh-CN.md
+docs
 public/vendor
 *.tsbuildinfo
 *.log

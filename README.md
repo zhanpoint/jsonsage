@@ -1,53 +1,35 @@
-<p align="center">
-  <img src="public/jsonsage-mark.svg" width="72" alt="JsonSage 标志" />
-</p>
+![JsonSage logo](public/jsonsage-mark.svg)
 
-<h1 align="center">JsonSage</h1>
+# JsonSage
 
-<p align="center"><strong>看清 JSON，保持精度，数据留在本地。</strong></p>
-<p align="center">基于 CodeMirror 6 的 JSON / JSONC 网页工具：编辑、对比与类型生成，全部在浏览器中完成。</p>
-<p align="center"><sub>A local-first JSON / JSONC toolbox for the browser: edit, query, diff and generate types without uploading your data.</sub></p>
+**See your JSON clearly. Keep every digit. Keep your data local.**
 
-<p align="center">
-  <a href="https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml"><img src="https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml/badge.svg?branch=main" alt="CI and Deploy" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7c9bdf" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/React-19-61dafb" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-3178c6" alt="TypeScript" />
-  <a href="https://codemirror.net/"><img src="https://img.shields.io/badge/editor-CodeMirror_6-a78bfa" alt="CodeMirror 6" /></a>
-  <a href="#隐私与离线"><img src="https://img.shields.io/badge/privacy-local--first-6dbb9b" alt="Local first" /></a>
-</p>
+A JSON / JSONC workbench built on CodeMirror 6: edit, query, diff and generate types, all processed locally in your browser.
 
-<p align="center">
-  <a href="https://jsonsage.dreamlog.xyz/">在线使用</a> ·
-  <a href="#快速开始">快速开始</a> ·
-  <a href="#功能一览">功能一览</a> ·
-  <a href="#使用指南">使用指南</a> ·
-  <a href="#部署">部署</a> ·
-  <a href="#开发与贡献">参与贡献</a>
-</p>
+**英语** · [简体中文](README.zh-CN.md)
 
-<p align="center">
-  <img src="docs/demo.gif" width="860" alt="JsonSage 演示动画：长整数保持精度、格式化、代码与树形联动、结构对比" />
-</p>
+![CI and Deploy](https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml/badge.svg?branch=main)![MIT License](https://img.shields.io/badge/license-MIT-7c9bdf)![React 19](https://img.shields.io/badge/React-19-61dafb)![TypeScript](https://img.shields.io/badge/TypeScript-3178c6)![CodeMirror 6](https://img.shields.io/badge/editor-CodeMirror_6-a78bfa)![Local first](https://img.shields.io/badge/privacy-local--first-6dbb9b)
 
-<p align="center"><sub>演示动画（25 秒）。<a href="docs/demo.mp4">下载 MP4 高清版</a></sub></p>
+**[Live demo](https://jsonsage.dreamlog.xyz/)** · [Quick start](#quick-start) · [功能](#features) · [Shortcuts](#keyboard-shortcuts) · [Deployment](#deployment) · [Contributing](#contributing)
 
-![代码与树形视图联动，长整数保持原始精度](preview.png)
+![JsonSage demo: lossless big integers, formatting, code and tree sync, structural diff](docs/demo.gif)
 
-<p align="center"><sub>真实界面：选择树节点，代码和底部路径同步定位。截图使用演示数据。</sub></p>
+25-second demo · HD MP4
 
-## 为什么用 JsonSage
+## Why JsonSage
 
-- **保留长整数**：格式化、压缩、树形展示和结构对比都保留数字原文，雪花 ID 不会变成另一串数字。
-- **减少等待**：CodeMirror 虚拟视口、虚拟滚动与 Web Worker 分担编辑、计算和渲染；大文件采用分支浏览和分页。
-- **用熟悉的方式看数据**：代码、树形、表格、节点图随时切换，树形视图将代码与树并排展示并相互定位。
-- **从问题到结果**：精确到行列的诊断、一键修复、结构对比，覆盖常见调试流程。
-- **键盘优先**：命令面板、默认快捷键、自定义键位；格式化和复制结果遵循设置的缩进。
-- **数据留在本地**：无后台解析、无分析脚本；生产版支持 PWA 安装和离线使用。
+- **Lossless big integers**: formatting, minifying, tree view and diff all keep the original number text, so Snowflake IDs are never silently altered.
+- **Handles big files**: virtual viewport plus Web Workers; very large files switch to branch browsing and pagination. Imports up to 128 MiB.
+- **Several views**: code, tree, table and node graph, with two-way navigation between code and tree.
+- **From error to fix**: line/column diagnostics, one-click repair and structural diff cover the usual debugging loop.
+- **Keyboard first**: command palette, customizable shortcuts, and formatting that follows your indent setting.
+- **Your data stays in the browser**: no backend, no analytics scripts; installable as a PWA and usable offline.
 
-## 快速开始
+![Code and tree views in sync, big integers kept exactly](docs/preview.png)
 
-**环境要求**：Node.js 24 LTS（含 npm）和 Git。无需数据库、API Key 或后端服务。
+## Quick start
+
+Requires Node.js 24 LTS and Git. No database, API key or backend service needed.
 
 ```sh
 git clone https://github.com/zhanpoint/jsonsage.git
@@ -56,9 +38,9 @@ npm ci
 npm run dev
 ```
 
-打开 [http://127.0.0.1:5174/#workspace](http://127.0.0.1:5174/#workspace) 即可使用。文件预览代理已集成在开发服务中，无需 Docker 或另启服务。
+打开 <http://127.0.0.1:5174/#workspace>.
 
-**试一试**：把下面的 JSON 粘贴到代码视图，按 `Ctrl / ⌘ + Enter` 格式化，再按 `Alt + 2` 打开树形视图查看节点。
+**试一试**: paste the JSON below into the code view, press `Ctrl / ⌘ + Enter` to format, then `Alt + 2` for the tree view.
 
 ```json
 {
@@ -71,212 +53,106 @@ npm run dev
 }
 ```
 
-- 右键任意字段，可复制它的路径。
-- 将光标放入字符串后点击 **侧边预览**，即可阅读 Markdown、公式和远程文件。面板可调宽度，随原文自动更新；工具栏仅保留分页、打开原文件和关闭操作。PDF 自动去除纸张空白边缘并适应完整内容；文本最多展示前 50,000 个字符，外部图片按需加载。
+> Tip: right-click any field to copy its JSONPath (e.g. `$.users[0].name`). Put the cursor in a string and click **Side preview** to view Markdown, PDF, images, audio/video and Office files in place.
 
-构建并在本地预览生产版（PWA 仅在生产构建中启用，开发模式不注册 Service Worker）：
+Preview the production build locally (the PWA is only enabled in production builds):
 
 ```sh
 npm run build
 npm run preview -- --host 127.0.0.1 --port 5175
 ```
 
-打开 [http://127.0.0.1:5175](http://127.0.0.1:5175)。
+## 功能
 
-> 应用顶部的 **文档** 入口提供工具栏命令指南：验证、自动修复、数据脱敏、格式化、压缩、转义与反转义，包含处理机制、输入输出示例和使用边界，显示的快捷键与当前设置保持一致。
-
-## 功能一览
-
-| 功能 | 你可以做什么 |
+| Feature | What you can do |
 | --- | --- |
-| **代码编辑** | JSON / JSONC 高亮、行号、折叠、括号匹配；CodeMirror 原生查找替换和撤销重做 |
-| **多视图** | 树节点增删改；对象数组自动提取表头；层级节点图支持深度、缩放和平移；树形视图提供代码与树联动 |
-| **诊断与修复** | 中英文错误说明、行列定位、红色波浪线；修复单引号、未引号键、尾逗号、注释等输入 |
-| **结构对比** | 左右两列比较，区分新增、删除、值修改和类型变更；对象键顺序不同仍可判定相等 |
-| **类型生成** | 从样本推断 TypeScript、Python、Go、Rust 类型，本地生成，可复制或导出 |
-| **导入与导出** | 本地 UTF-8 文件选择、拖放，JSON 文件 URL 导入；导出 `.json`、复制原文或格式化结果 |
-| **本地历史** | 自动保存带标题和文件名的原文，也可切换为手动保存；支持搜索、置顶、重命名、删除，数据仅存于当前浏览器 |
-| **智能粘贴与脱敏** | 粘贴时识别 URL、JWT、Base64、转义 JSON；脱敏常见敏感字段、电话、邮箱和 IP 等 |
+| **Code editing** | JSON / JSONC highlighting, folding, bracket matching, find & replace, undo/redo |
+| **Multiple views** | Add, edit and delete tree nodes; object arrays become tables; zoomable, pannable hierarchy graph |
+| **Diagnostics & repair** | Bilingual error messages with line/column; fixes single quotes, unquoted keys, trailing commas, comments |
+| **Structural diff** | Added, removed, changed and type-changed values; key order is ignored for objects |
+| **Type generation** | Generate TypeScript, Python, Go and Rust types from a sample |
+| **Import & export** | File picker, drag and drop, URL import; export `.json` or copy results |
+| **Local history** | Auto or manual save; search, pin, rename; stored only in this browser |
+| **Smart paste & redaction** | Detects URLs, JWTs, Base64 and escaped JSON; redacts phone numbers, emails, IPs and other common sensitive fields |
+| **Field preview** | Markdown, math, PDF, PPT/PPTX, DOCX, spreadsheets, images, audio/video |
 
-## 使用指南
+The in-app **文档** entry explains each toolbar command: how it works, examples and limits.
 
-### 快捷键
+## Keyboard shortcuts
 
-`Mod` 表示 Windows / Linux 的 `Ctrl`，或 macOS 的 `⌘`。
+`Mod` is `Ctrl` on Windows / Linux and `⌘` on macOS. Every shortcut can be customized with `Alt + K`.
 
-| 默认快捷键 | 操作 |
+| Shortcut | Action |
 | --- | --- |
-| `Mod + K` | 打开命令面板；方向键选择，Enter 执行，Esc 关闭 |
-| `Mod + Enter` | 格式化当前编辑器 |
-| `Mod + F` | 查找与替换 |
-| `Alt + 1 … 4` | 依次切换代码、树形、表格、节点图 |
-| `Alt + 7` / `Alt + 8` | 对比 / 类型生成 |
-| `Alt + K` | 打开快捷键设置；检测重复键位并支持恢复默认 |
-| `Alt + H` | 打开历史记录 |
-| `Alt + N` | 新建记录 |
-| `Mod + S` | 立即保存当前记录 |
-| `Mod + O` | 打开本地文件 |
-| `Mod + Z` / `Mod + Y` | 撤销 / 重做 |
-| `Alt + R` / `Alt + V` / `Alt + M` | 修复 / 验证 / 压缩 |
-| `Alt + C` / `Alt + Y` / `Alt + X` | 复制格式化结果 / 复制原文 / 导出文件 |
+| `Mod + K` | Command palette |
+| `Mod + Enter` | Format |
+| `Mod + F` | Find & replace |
+| `Alt + 1 … 4` | Code / Tree / Table / Graph |
+| `Alt + 7` / `Alt + 8` | Diff / Type generation |
+| `Alt + R` / `Alt + V` / `Alt + M` | Repair / Validate / Minify |
+| `Alt + C` / `Alt + Y` / `Alt + X` | Copy formatted / Copy original / Export file |
+| `Mod + S` / `Mod + O` | Save / Open file |
+| `Alt + H` / `Alt + N` | History / New record |
 
-所有默认快捷键均为两键组合，其他操作可在命令面板中查看。旧默认键位会自动更新，手动自定义的键位保留；如与新默认值冲突，以自定义键位优先，受影响的默认项显示「—」，可重新设置。系统或浏览器保留的组合键可能无法覆盖。
+## Privacy & offline
 
-### 路径导航
+- Parsing, repair, diff and type generation run locally in the browser. **Your input is never uploaded**, and no third-party compute service or CDN is used.
+- Saved history lives in the browser's IndexedDB. It is not synced across devices and not additionally encrypted; clearing site data deletes it, so export anything important.
+- `localStorage` only holds preferences such as theme, language, indent and shortcuts.
+- When you import a URL, the browser requests that address (without cookies or referrer) and is subject to the target site's CORS policy.
+- After the first visit to the production build over HTTPS or localhost, the app works offline.
+- JWTs are decoded, not verified. Auto-repair may infer missing content and rule-based redaction may miss custom fields; review results before sharing.
 
-状态栏常驻当前节点路径，点击任意层级返回父节点；数组前后切换保留字段路径，目标字段缺失时定位该数组元素。右键字段或点击「复制当前路径」可复制 JSONPath，例如 `$.users[0].name`。
+**Precision and large-file limits**
 
-<details>
-<summary><strong>设置、标签页与历史记录</strong></summary>
+Numbers are kept as raw token via [`lossless-json`](https://github.com/josdejong/lossless-json), never round-tripped through native `JSON.parse` / `JSON.stringify`, which lose big integers.
 
-- **设置分组**：保存方式、格式化缩进、快捷键。支持 2 空格、4 空格和 Tab 缩进，编辑、格式化、修复和生成结果共用此设置；支持明暗主题、主题配色、中文 / English，偏好保存在本机。
-- **保存方式**：默认自动保存，停顿后写入浏览器 IndexedDB；可切换为手动保存。连续编辑更新同一条记录，保存失败时保留编辑内容并提示原因。
-- **多标签页**：每个标签独立保留内容、撤销记录、光标位置和工具选项；标签名显示完整文件名。从历史重复打开同一记录会切换到已有标签。切换标签保留未保存内容，手动保存模式下关闭有修改的标签会先确认。
-- **恢复**：刷新后恢复已保存的标签及固定状态；撤销记录仅保留在当前页面会话中。
-- **历史记录**：紧凑下拉列表，可按标题或文件名搜索，通过行尾菜单重命名、删除和置顶。**置顶** 让记录排在前面；**固定标签页** 将标签移到左侧并隐藏关闭按钮。
-- **文件名唯一**：忽略大小写和首尾空格。同名导入自动使用 `bom (2).json` 等名称，手动重命名不会覆盖已有记录。
-
-</details>
-
-## 隐私与离线
-
-**未保存的 JSON 只存在于页面内存；已保存的历史记录存于此浏览器的 IndexedDB，刷新后仍可找回。** 解析、修复、对比和类型生成在浏览器本地运行，不上传输入内容，不依赖第三方计算服务或 CDN。
-
-- `localStorage` 只保存主题、语言、缩进和快捷键等偏好；离线缓存只保存应用资源。
-- 大文件在 CodeMirror 6 中按视口流式语法高亮；文件解码、换行处理及折叠索引生成在 Worker 中执行，完整内容保留，不以截断文件换取速度，跳转远处无需等待前面的语法树解析完成。
-- 历史列表仅读取标题、文件名等信息，打开记录后才加载原文；重命名不会重写大文件内容。跨标签页修改有版本检查，避免覆盖更新。
-- 历史记录不跨浏览器或设备同步，也不提供额外加密。删除记录或清除网站数据会移除保存内容；隐私模式、存储配额和浏览器清理策略可能影响保留时间，重要内容请另行导出备份。
-- 主动导入 URL，或粘贴 URL 触发智能导入时，浏览器会请求该地址；请求不附带 Cookie 和 Referrer，并受目标服务 CORS 限制。
-- 首次通过 **HTTPS 或 localhost** 打开生产版并完成资源缓存后，可断网重新访问。支持安装的浏览器会显示安装入口。
-- JWT 功能只解码 payload，不验证签名；Base64 为解码。修复可能推断缺失内容，规则脱敏也可能遗漏业务自定义字段，使用或分享前请核对结果。
-
-<details>
-<summary><strong>精度与大文件处理：机制和边界</strong></summary>
-
-数字通过原始 token 与 [`lossless-json`](https://github.com/josdejong/lossless-json) 保存，格式化和压缩不经过会丢失长整数的原生 `JSON.parse` / `JSON.stringify` 往返。结构对比不使用浮点数判断数字等值；数组按索引比较。
-
-生成代码支持 TypeScript、Python、Go、Rust 语法高亮与编辑。TypeScript 使用官方编译器检查语法和类型；其他语言检查语法，不执行编译器或外部依赖检查。类型生成来自输入样本，不能替代完整业务 schema；生成的 TypeScript `number` 也不代表下游可精确表示超大整数。
-
-编辑器仅渲染可见区域；校验、转换、对比、类型生成和索引使用 Worker。连续输入合并文本快照，过期任务会被取消，避免异步结果覆盖后续编辑。
-
-大文件主编辑器复用校验遍历生成的折叠索引，通过可转移的紧凑数组返回，减少一次全文复制和独立扫描。连续光标移动合并为最后一次路径请求，右键请求立即执行。单行压缩 JSON 的折叠查询会跳过整个单行子树，避免逐节点检查。
-
-| 边界 | 当前策略 |
+| Item | Current policy |
 | --- | --- |
-| 文件 / URL 导入 | 最大 128 MiB；严格检查 UTF-8 编码 |
-| 常规语法树 | 最多 200 万 UTF-16 字符、100,000 节点、256 层；超出后切换分支浏览和分页 |
-| 大文件树 | 每页 300 个直接子节点；复杂增删改请在代码视图完成 |
-| 节点图 / 表格 | 图最多 300 节点，表格最多 100 列；图展示 JSON 层级 |
-| 查询 / 对比 | 最多展示 5,000 个结果或差异标记；结构对比仍计算完整差异数量 |
+| File / URL import | Up to 128 MiB, strict UTF-8 check |
+| Regular syntax tree | Up to 2M characters, 100,000 nodes, 256 levels; beyond that, branch browsing and pagination |
+| Large-file tree | 300 direct children per page |
+| Graph / table | Graph up to 300 nodes, table up to 100 columns |
+| Search / diff | Up to 5,000 results or diff markers displayed |
 
-重复键的树形数据只读，避免编辑路径歧义。虚拟滚动限制渲染量，但读取、解析和输出仍随数据量消耗时间与内存，无法保证任意设备处理任意输入都无等待。
+Generated types come from your sample and are no substitute for a full schema. Run `npm run benchmark` to measure processing time on ~100 MiB of synthetic data in Node (it measures algorithms, not browser frame rate). More implementation details (in Chinese) are in [docs/details.md](docs/details.md).
 
-运行 `npm run benchmark` 可在内存中生成约 100 MiB 的合成数据，测量校验、分支浏览、表格、节点图、压缩和格式化的耗时与进程峰值内存，不生成样本文件。该测试衡量的是 Node 中的算法耗时，不是浏览器帧率。
 
-2026-10-20，在约 16 GB 内存、Ryzen 5 5500U（6 核 12 线程）的机器上，100 MiB 合成样本的校验与折叠索引由分开遍历的 3.98 秒降至共享遍历的 2.96 秒（单次测量）。Chrome 生产构建另验证了约 50 MiB、274,498 行样本的本机 URL 导入、末尾跳转、编辑撤销、折叠和保存。128 MiB 是导入上限，不是对任意数据结构、设备和操作的流畅度保证。
 
-</details>
+## Deployment
 
-## 部署
+The build output is plain static files. Host it on any server with **SPA fallback** and correct MIME types (including WASM). The PWA and some clipboard features need HTTPS (or localhost).
 
-前端构建产物是静态资源，可托管在支持 **SPA 回退**和正确模块/WASM MIME 类型的服务器上。`npm run dev` 和 `npm run preview` 已内置同源文件代理，单进程运行，不使用 Docker。PWA 和部分剪贴板功能需要 HTTPS（或 localhost）这样的安全上下文。
+- **Static hosting only**: run `npm run build` and publish `dist/`. Remote file preview requires the file origin to allow CORS.
+- **Bundled file proxy**: to preview files that block cross-origin reads, run `npm run file-proxy` on the host (listens on `127.0.0.1:8081`) and forward `/api/preview` to it from Nginx.
+- **Docker Compose**:
+  ```sh
+  cp .env.example .env
+  export APP_REVISION=$(git rev-parse HEAD)
+  export JSONSAGE_IMAGE=jsonsage:$APP_REVISION
+  docker compose up -d --build --wait
+  curl -fsS http://127.0.0.1:8088/healthz
+  ```
 
-静态站点如需预览禁止跨域读取的文件，在主机运行 `npm run file-proxy`，由 Node 内置 HTTP 服务监听 `127.0.0.1:8081`，再通过 Nginx 将 `/api/preview` 转发到该端口；已有主机模板包含此配置。代理复用开发环境的同一实现，不需要额外容器或转换服务。仅发布静态文件时，远程预览要求文件源站允许 CORS。
+  The container binds to `127.0.0.1` only; expose it publicly through a reverse proxy using the Nginx templates in `deploy/`.
+- **Automatic deploys**: pushes to `main` trigger [`CI and Deploy`](.github/workflows/deploy.yml) (checks, tests, build, SSH release, automatic rollback on failure). See [deploy/README.md](deploy/README.md) for server setup and required secrets.
 
-<details>
-<summary><strong>Docker Compose：已有的可选静态站点部署</strong></summary>
+## Contributing
 
-需要 Docker Engine 和 Docker Compose v2。以下命令在项目根目录的 **Linux / macOS shell** 中执行：
-
-```sh
-cp .env.example .env
-export APP_REVISION=$(git rev-parse HEAD)
-export JSONSAGE_IMAGE=jsonsage:$APP_REVISION
-docker compose up -d --build --wait
-curl -fsS http://127.0.0.1:8088/healthz
-```
-
-`.env` 中 `APP_PORT=8088` 控制主机端口，`PUBLIC_HOST` 用于主机 Nginx 模板；修改端口后，健康检查地址也应相应修改。容器只绑定 `127.0.0.1`，公网入口需通过反向代理提供。
-
-镜像采用 Node 24 / Nginx 多阶段构建，运行时仅提供静态资源，使用非 root 用户、只读文件系统和资源限制。`/healthz` 用于健康检查，`/version.json` 返回构建提交。
-
-反向代理模板位于 `deploy/nginx.host.conf.template`（HTTP）和 `deploy/nginx.https.conf.template`（HTTPS，需要对应域名的证书）。渲染时只替换 `PUBLIC_HOST` 和 `APP_PORT`，保留 `$uri` 等 Nginx 自身变量。修改配置后先执行 `nginx -t`，再重载 Nginx。
-
-</details>
-
-<details>
-<summary><strong>GitHub Actions：持续集成与自动部署（可选）</strong></summary>
-
-工作流 [`CI and Deploy`](.github/workflows/deploy.yml) 在推送 `main` 时执行检查、测试、构建和发布；PR 只做检查，也支持手动触发。服务器只接受当前 `origin/main` 的完整 SHA，避免过期任务发布旧代码。
-
-如需自动部署到你自己的服务器，请在仓库的 `production` 环境中配置：
-
-| 类型 | 名称 | 说明 |
-| --- | --- | --- |
-| Secret | `SSH_PRIVATE_KEY` | 部署专用私钥，不要复用个人密钥 |
-| Secret | `SSH_KNOWN_HOSTS` | 已核验的服务器 SSH 主机公钥 |
-| Variable | `SSH_HOST` | 服务器地址 |
-| Variable | `SSH_PORT` | SSH 端口 |
-| Variable | `SSH_USER` | 部署专用账户 |
-| Variable | `PUBLIC_URL` | 站点公网地址，用于发布后的线上验证 |
-
-公开仓库不需要 GitHub 密码、仓库访问令牌或镜像仓库密钥。首次准备服务器时：
-
-1. 安装 Git、Docker 和 Docker Compose。
-2. 将仓库克隆到部署目录，配置 `.env` 和反向代理。
-3. 把 `deploy/ssh-entrypoint.sh` 安装到 `.ops/ssh-entrypoint.sh`。
-4. 在部署账户的 `authorized_keys` 中为部署公钥配置 `restrict` 和该入口的强制命令，只允许 `deploy <SHA>`，不提供交互式 Shell 或端口转发。
-
-发布策略：构建期间继续运行原容器；新版本必须通过健康检查与版本检查，失败则恢复上一镜像。流水线还会验证线上版本和 PWA 清单的响应类型。历史镜像用于回滚，不执行影响其他项目的全局镜像清理。
-
-排查线上状态（在服务器部署目录中执行）：
-
-```sh
-export APP_REVISION=$(cat .ops/deployed-revision)
-export JSONSAGE_IMAGE=jsonsage:$APP_REVISION
-docker compose ps
-docker compose logs --tail 100 app
-curl -fsS http://127.0.0.1:8088/version.json
-```
-
-HTTPS 证书可使用 Certbot 签发，并通过续期定时器与 Nginx 校验 / 重载钩子自动续期，可用 `certbot renew --dry-run` 检查续期流程。
-
-发布记录见 [GitHub Actions](https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml)。相关参考：[Docker 多阶段构建](https://docs.docker.com/build/building/multi-stage/)、[Compose 健康等待](https://docs.docker.com/reference/cli/docker/compose/up/)、[GitHub Actions 密钥](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)。
-
-</details>
-
-打开或拖入 JSON 文件时，超过 128 MiB 会在读取前取消并提示拆分；粘贴及编辑受统一的 134,217,728 字符上限保护（按 UTF-16 单位计数），包含粘贴后的现有内容，选区替换会扣除被替换部分。超限操作不写入编辑器或撤销历史，保留原有内容；提示可确认关闭或按 Esc 关闭。此上限是应用的资源保护策略，并非 JSON 格式或 `JSON.parse` 的固定限制。
-
-## 开发与贡献
-
-技术栈：React 19 + TypeScript + Vite。编辑器、各视图和计算层相互分离，重计算在 Worker 中执行；快捷键、工具栏和命令面板共用 `src/lib/commands.ts`，避免同一操作维护多套定义。
-
-字段预览沿用可调整宽度的侧栏，支持图片、音视频、Markdown、PDF、PPT/PPTX，以及 Univer Web SDK 只读表格和 DOCX 正文，无需部署 Univer 后端服务。办公组件按需加载；SheetJS 和 Mammoth 在 Worker 内解析文件，不上传至转换服务。DOCX 展示正文及基础排版，不保证原文件的分页、图片和复杂样式还原；旧版 DOC 等格式保留原文件打开入口。需完整下载并解析的文件上限为 20 MiB；下载采用 30 秒无数据进展超时，接收完成后单独提供 30 秒解析与渲染预算，表格上限为 50 个工作表、每表 10,000 行 / 256 列、总计 100,000 个已存储单元格。
-
-远程文件优先由浏览器直接读取，遇到网络/CORS 拦截时通过同源文件代理读取，完整保留查询参数；无后缀链接通过同一代理读取 Content-Type 和文件名以选择预览器，优先 HEAD，不支持时仅获取 GET 响应头并终止正文。JSON 正文不会发送至代理。代理只接受公网 HTTP(S) 标准端口，不转发 Cookie、Authorization 或来源站响应头，不缓存文件；校验 DNS 并固定实际连接 IP，每次重定向重新校验，最多 3 次。每实例最多同时处理 8 个请求，超限、超时和客户端断开会终止上游流。使用项目提供的 Nginx 模板时，代理请求不写访问日志。
-
-如网络代理软件将 DNS 解析为 `198.18.*` 等虚拟地址，请在 `.env.local` 中设置 `PREVIEW_DNS_OVER_HTTPS=https://dns.google/resolve`，然后重启开发服务或代理。默认使用系统 DNS，HTTPS DNS 为可选的可信解析器，返回地址仍需通过公网校验。
-
-音视频采用 Video.js 10 的 React 组件及官方 Neutral 皮肤，按需加载，支持播放、暂停、进度、音量和倍速；视频另有全屏、画中画等能力（依浏览器支持）。控件跟随中英文及明暗主题，默认仅预加载元数据，不自动播放；浏览器直接读取媒体，不经过文档下载缓冲或 20 MiB 限制，关闭时停止播放并释放媒体源。播放取决于源站可访问性及浏览器编码支持，不转码；当前接入原生 HTML5 文件，HLS/DASH 引擎可后续按需扩展。
-
-PPT/PPTX 使用浏览器端 Web-PPT，按需加载、Worker 内解析，仅生成当前页 SVG，自动适应整页，支持翻页及安全外部链接。界面沿用当前语言与主题，幻灯片保留原稿配色；复杂字体、动画和多媒体不保证与 PowerPoint 完全一致。关闭面板终止 Worker 并释放文件资源，无需 Office、Docker 或转换服务。
-
-PDF 使用浏览器端 PDF.js，自动测量可见内容边界，去除空白纸边后按可用宽高完整显示，支持翻页、链接注释及文档内页面跳转。仅裁去外围留白，不重排或修改原文件；图片、图形、文字及链接区域均保留，空白页按原页面展示。每次仅渲染一页，边界测量复用同一画布且最长边不超过 1024 像素，最终画布限制为约 400 万像素；主题通过浏览器 SVG 色阶映射统一适配文字、表格底色和页面背景，切换主题不重新解析或渲染 PDF。PDF、DOCX 和表格中的 HTTP(S)、邮件及电话链接可打开，危险协议不会执行；表格仅展示缓存值，不执行 `HYPERLINK` 等公式。预览界面跟随当前中英文、配色和明暗主题；切换时不重新下载文件，关闭时取消当前任务并销毁文件渲染实例。字段读取与路径定位复用工作区 Worker，首次同步后仅传输文本增量；过期任务可取消。
-
-Markdown 预览支持六级标题、列表与任务列表、表格、引用、提示框、代码高亮、公式、脚注和网络图片，以及经过过滤的 HTML 图片、折叠块、上下标和键帽。远程 Markdown 文件中的相对图片地址按原文件 URL 解析；JSON 字段中的相对路径没有文件基址，需使用完整图片 URL。脚注在侧栏内跳转，图片按需加载，加载失败显示替代文字；脚本、嵌入网页及任意 HTML 样式不执行。
+Stack: React 19 · TypeScript · Vite · CodeMirror 6. Heavy computation runs in Workers; shortcuts, toolbar and command palette share `src/lib/commands.ts`.
 
 ```text
-src/components/   编辑器、各视图、菜单与对话框
-src/hooks/        状态同步与计算任务调度
-src/lib/          JSON 算法、路径、导入、快捷键与设置
-src/workers/      本地计算任务
-tests/            功能与部署回归测试
-deploy/           Nginx 配置与发布脚本
-scripts/          性能测量
-docs/             README 演示动画
+src/components/   editor, views, menus and dialogs
+src/hooks/        state sync and compute-task scheduling
+src/lib/          JSON algorithms, paths, import, shortcuts, settings
+src/workers/      local compute tasks
+server/           same-origin file preview proxy
+tests/            feature and deployment regression tests
+deploy/           Nginx config and release scripts
+scripts/          performance measurement
 ```
 
-欢迎通过 [Issue](https://github.com/zhanpoint/jsonsage/issues) 提交可复现的问题，或从功能分支向 `main` 提交 PR。提交前请运行：
+Please report reproducible bugs via [Issues](https://github.com/zhanpoint/jsonsage/issues), or open a PR from a feature branch to `main`. Before submitting, run:
 
 ```sh
 npm test
@@ -284,14 +160,8 @@ npm run check:unused
 npm run build
 ```
 
-在 Linux 或带 Bash 的环境中还可执行 `bash tests/deploy.test.sh`，CI 会运行该部署回归测试；改动涉及算法性能时，请用 `npm run benchmark` 评估。
+## Credits & license
 
-## 致谢与许可证
+Released under the [MIT License](LICENSE). Third-party dependencies keep their own licenses.
 
-基于 [MIT License](LICENSE) 开源。第三方依赖保留各自许可证。
-
-- **编辑体验**：[CodeMirror 6](https://codemirror.net/)
-- **解析与转换**：[jsonc-parser](https://github.com/microsoft/node-jsonc-parser)、[lossless-json](https://github.com/josdejong/lossless-json)、[jsonrepair](https://github.com/josdejong/jsonrepair)、[quicktype](https://github.com/glideapps/quicktype)
-- **交互与可视化**：[Base UI](https://base-ui.com/)、[cmdk](https://github.com/pacocoursey/cmdk)、[TanStack Virtual](https://tanstack.com/virtual/latest)、[React Flow](https://reactflow.dev/)，界面参考 [21st](https://21st.dev/) 的组件设计
-- **离线能力**：[Vite PWA](https://vite-pwa-org.netlify.app/)
-- **文件预览**：[Univer](https://docs.univer.ai/)、[SheetJS](https://docs.sheetjs.com/)、[Mammoth](https://github.com/mwilliamson/mammoth.js)、[PDF.js](https://mozilla.github.io/pdf.js/)、[Web-PPT](https://github.com/unStone/web-ppt)、[Video.js](https://videojs.org/docs/guides/installation/react)、[DOMPurify](https://github.com/cure53/DOMPurify)
+Thanks to [CodeMirror 6](https://codemirror.net/), [jsonc-parser](https://github.com/microsoft/node-jsonc-parser), [lossless-json](https://github.com/josdejong/lossless-json), [jsonrepair](https://github.com/josdejong/jsonrepair), [quicktype](https://github.com/glideapps/quicktype), [Base UI](https://base-ui.com/), [cmdk](https://github.com/pacocoursey/cmdk), [TanStack Virtual](https://tanstack.com/virtual/latest), [React Flow](https://reactflow.dev/), [Vite PWA](https://vite-pwa-org.netlify.app/), [Univer](https://docs.univer.ai/), [SheetJS](https://docs.sheetjs.com/), [Mammoth](https://github.com/mwilliamson/mammoth.js), [PDF.js](https://mozilla.github.io/pdf.js/), [Web-PPT](https://github.com/unStone/web-ppt), [Video.js](https://videojs.org/) and [DOMPurify](https://github.com/cure53/DOMPurify). UI inspired by component designs from [21st](https://21st.dev/).

@@ -60,7 +60,7 @@ assert.equal(largeTable(source, [], 0).rows[1].cells.msg, '"line\\nnext"');
 assert.equal(largeGraph(source, 3).items.some(item => JSON.stringify(item.path) === '[1,"msg"]'), true);
 const rows = treePage(source, { all: true, root: true, offsets: [] }).rows;
 assert.equal(rows.some(row => JSON.stringify(row.path) === '[1,"msg"]'), true);
-assert.equal(await readPreviewText(maskJson(source).source, [1, 'token']), '[redacted]');
+assert.equal(await readPreviewText(maskJson(source).source, [1, '[redacted_key]']), '[redacted]');
 assert.equal(analyze({ kind: 'diff', source, other: replacement, jsonc: false }).total, 1);
 assert.match((await advanced({ kind: 'types', source, jsonc: false, indent: '2' })).source, /level/);
 const large = source.repeat(25_000);

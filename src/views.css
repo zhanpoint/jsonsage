@@ -170,7 +170,12 @@
 .shortcut-dialog footer span { flex: 1; font-size: 11px; opacity: .7; }.shortcut-dialog footer button { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--tip-fg) 7%, transparent); color: inherit; font-size: 12px; }
 @media (max-width: 650px) { [cmdk-item] { gap: 8px; font-size: 12px; padding: 8px; }[cmdk-item] kbd { font-size: 9px; }.shortcut-dialog footer { flex-wrap: wrap; }.shortcut-dialog footer span { flex-basis: 100%; } }
 
-/* Every view fills one shared, bounded viewport. Only its content scrolls. */
+/* Values produced by the privacy mask are visibly distinct from original data. */
+.cm-masked-token { color: #5b3fd6 !important; background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 4px; padding: 0 2px; font-weight: 650; }
+.app-shell[data-theme="dark"] .cm-masked-token { color: #d6c8ff !important; background: #34265c; border-color: #6d55ad; }
+
+.cm-httpLink { color: #4774c8; text-decoration: underline; text-decoration-color: #9db4e5; text-underline-offset: 2px; }
+
 .editor-viewport { position: relative; display: flex; flex-direction: column; min-height: 300px; overflow: hidden; }
 .editor-content > .code-view, .editor-content > .data-view, .editor-content > .analysis-tools { flex: 1; min-height: 0; }
 .code-view:not(.linked-editors), .editor-content > .data-view, .analysis-tools { display: flex; flex-direction: column; }
