@@ -1,20 +1,37 @@
-![JsonSage logo](public/jsonsage-mark.svg)
+<p align="center">
+  <img src="public/jsonsage-mark.svg" width="72" height="72" alt="JsonSage logo" />
+</p>
 
-# JsonSage
+<h1 align="center">JsonSage</h1>
 
-**See your JSON clearly. Keep every digit. Keep your data local.**
+<p align="center"><strong>See your JSON clearly. Keep every digit. Keep your data local.</strong></p>
+<p align="center">A local-first JSON / JSONC workbench for editing, querying, diffing and generating types in your browser.</p>
 
-A JSON / JSONC workbench built on CodeMirror 6: edit, query, diff and generate types, all processed locally in your browser.
+<p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
 
-**英语** · [简体中文](README.zh-CN.md)
+<p align="center">
+  <a href="https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml"><img src="https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml/badge.svg?branch=main" alt="CI and Deploy" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7c9bdf" alt="MIT License" /></a>
+  <img src="https://img.shields.io/badge/React-19-61dafb" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-3178c6" alt="TypeScript" />
+  <a href="https://codemirror.net/"><img src="https://img.shields.io/badge/editor-CodeMirror_6-a78bfa" alt="CodeMirror 6" /></a>
+  <a href="#privacy--offline"><img src="https://img.shields.io/badge/privacy-local--first-6dbb9b" alt="Local first" /></a>
+</p>
 
-![CI and Deploy](https://github.com/zhanpoint/jsonsage/actions/workflows/deploy.yml/badge.svg?branch=main)![MIT License](https://img.shields.io/badge/license-MIT-7c9bdf)![React 19](https://img.shields.io/badge/React-19-61dafb)![TypeScript](https://img.shields.io/badge/TypeScript-3178c6)![CodeMirror 6](https://img.shields.io/badge/editor-CodeMirror_6-a78bfa)![Local first](https://img.shields.io/badge/privacy-local--first-6dbb9b)
+<p align="center">
+  <a href="https://jsonsage.dreamlog.xyz/"><strong>Live demo</strong></a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#keyboard-shortcuts">Shortcuts</a> ·
+  <a href="#deployment">Deployment</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
 
-**[Live demo](https://jsonsage.dreamlog.xyz/)** · [Quick start](#quick-start) · [功能](#features) · [Shortcuts](#keyboard-shortcuts) · [Deployment](#deployment) · [Contributing](#contributing)
+<p align="center">
+  <img src="docs/demo.gif" width="860" alt="JsonSage demo: lossless big integers, formatting, code and tree sync, structural diff" />
+</p>
 
-![JsonSage demo: lossless big integers, formatting, code and tree sync, structural diff](docs/demo.gif)
-
-25-second demo · HD MP4
+<p align="center"><sub>25-second demo · <a href="docs/demo.mp4">HD MP4</a></sub></p>
 
 ## Why JsonSage
 

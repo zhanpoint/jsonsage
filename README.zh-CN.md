@@ -1,13 +1,9 @@
-<p align="center">
-  <img src="public/jsonsage-mark.svg" width="72" alt="JsonSage 标志" />
-</p>
+<p align="center"><img src="public/jsonsage-mark.svg" width="72" height="72" alt="JsonSage 图标" /></p>
 
 <h1 align="center">JsonSage</h1>
 
 <p align="center"><strong>看清 JSON，保持精度，数据留在本地。</strong></p>
 <p align="center">基于 CodeMirror 6 的 JSON / JSONC 工作台：编辑、查询、对比、生成类型，全程在浏览器本地处理。</p>
-
-<p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
 
 <p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
 

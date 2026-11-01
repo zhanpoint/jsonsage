@@ -156,7 +156,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('jsonsage-language');
     if (saved === 'zh' || saved === 'en') return saved;
-    return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    return 'zh';
   });
   const [theme, setTheme] = useState<Theme>(() => localStorage.getItem('jsonsage-theme') === 'light' ? 'light' : 'dark');
   const [palette, setPalette] = useState<PaletteId>(() => {
