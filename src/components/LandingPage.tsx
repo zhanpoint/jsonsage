@@ -1,4 +1,6 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -15,6 +17,7 @@ import {
   CaseSensitive,
   ChevronsDown,
   ChevronsUp,
+  ChevronDown,
   Check,
   CircleAlert,
   ClipboardPaste,
@@ -26,6 +29,7 @@ import {
   FileText,
   GitCompareArrows,
   Github,
+  Globe2,
   History,
   Hash,
   Link2,
@@ -51,6 +55,15 @@ import { RainbowButton } from './ui/RainbowButton';
 import { commandDefinitions } from '../lib/commands';
 import { parseTree } from 'jsonc-parser';
 import PathBreadcrumbs from './PathBreadcrumbs';
+import { useLanguage, type Language } from '../lib/language';
+import { translateLanding } from './landingTranslations';
+import { Select } from '@base-ui/react/select';
+
+const LandingLanguage = createContext<Language>('en');
+function useLandingTranslation() {
+  const language = useContext(LandingLanguage);
+  return (text: string) => translateLanding(language, text);
+}
 
 const repository = "https://github.com/zhanpoint/jsonsage";
 const logo = `${import.meta.env.BASE_URL}jsonsage-mark.svg`;
@@ -255,9 +268,10 @@ const NODE_W = 140;
 const NODE_H = 48;
 
 function GraphView() {
+  const t = useLandingTranslation();
   const find = (id: string) => graphNodes.find((node) => node.id === id)!;
   return (
-    <svg className="lp-graph" viewBox="0 0 540 264" role="img" aria-label="JSON 层级节点图">
+    <svg className="lp-graph" viewBox="0 0 540 264" role="img" aria-label={t("JSON 层级节点图")}>
       {graphEdges.map(([from, to], i) => {
         const a = find(from);
         const b = find(to);
@@ -289,6 +303,8 @@ function GraphView() {
 }
 
 function ProductWindow() {
+  const t = useLandingTranslation();
+  const language = useContext(LandingLanguage);
   const { ref, index, select, playing } = useAutoCycle(demoViews.length, demoInterval);
   const view = demoViews[index];
   return (
@@ -304,7 +320,7 @@ function ProductWindow() {
           <div className="lp-demo-tab-actions" aria-hidden="true"><Plus size={18} /><Save size={16} /><History size={16} /></div>
         </div>
         <div className="lp-window-toolbar">
-          <div className="lp-switch" role="group" aria-label="演示视图">
+          <div className="lp-switch" role="group" aria-label={t("演示视图")}>
             {demoViews.map(({ id, label, icon: Icon }, i) => (
               <button
                 key={id}
@@ -313,7 +329,7 @@ function ProductWindow() {
                 onClick={() => select(i)}
               >
                 <Icon size={14} />
-                {label}
+                {t(label)}
                 {i === index && playing && (
                   <span className="lp-switch-progress" key={index} style={{ animationDuration: `${demoInterval}ms` }} />
                 )}
@@ -333,7 +349,7 @@ function ProductWindow() {
           <div className={`lp-window-main${view.id === 'tree' ? ' lp-demo-linked' : ''}`} key={view.id}>
             {(view.id === 'code' || view.id === 'tree') && <div className="lp-demo-fold" aria-hidden="true"><ChevronsDown size={15} /><ChevronsUp size={15} /></div>}
             {(view.id === "code" || view.id === "tree") && (
-              <div className="lp-code" aria-label="JSON 示例">
+              <div className="lp-code" aria-label={t("JSON 示例")}>
                 {source.map((line, i) => (
                   <div key={i} className={i === 1 ? "is-current" : undefined}>
                     <span className="lp-ln">{i + 1}</span>
@@ -343,7 +359,7 @@ function ProductWindow() {
               </div>
             )}
             {view.id === "tree" && (
-              <ul className="lp-tree" aria-label="JSON 树形视图">
+              <ul className="lp-tree" aria-label={t("JSON 树形视图")}>
                 {treeRows.map((row, i) => (
                   <li
                     key={i}
@@ -362,7 +378,7 @@ function ProductWindow() {
             )}
             {view.id === "table" && (
               <div className="lp-table-wrap">
-                <div className="lp-demo-view-controls"><span>对象数组 <b>$.users</b></span><span>2 行 · 2 列</span></div>
+                <div className="lp-demo-view-controls"><span>{t("对象数组")}<b>$.users</b></span><span>{t("2 行 · 2 列")}</span></div>
                 <table className="lp-table">
                   <thead>
                     <tr>
@@ -386,13 +402,13 @@ function ProductWindow() {
                 </table>
               </div>
             )}
-            {view.id === "graph" && <><div className="lp-demo-view-controls"><span>展开深度 <b>3</b></span><span>6 个节点</span></div><GraphView /></>}
+            {view.id === "graph" && <><div className="lp-demo-view-controls"><span>{t("展开深度")}<b>3</b></span><span>{t("6 个节点")}</span></div><GraphView /></>}
           </div>
         </div>
         <div className="lp-window-status">
-          <span className="lp-demo-saved">自动保存</span>
-          <span><Code2 size={13} /> UTF-8</span><span>8 行</span><span>{source.join('\n').length} 字符</span>
-          <div className="lp-status-path" inert><PathBreadcrumbs path={[...view.path]} root={demoRoot} language="zh" onCopy={() => {}} onNavigate={() => {}} /></div>
+          <span className="lp-demo-saved">{t("自动保存")}</span>
+          <span><Code2 size={13} /> UTF-8</span><span>{t("8 行")}</span><span>{source.join('\n').length} {t("字符")}</span>
+          <div className="lp-status-path" inert><PathBreadcrumbs path={[...view.path]} root={demoRoot} language={language} onCopy={() => {}} onNavigate={() => {}} /></div>
         </div>
       </div>
     </div>
@@ -417,12 +433,13 @@ const formats = [
 ];
 
 function FormatMarquee() {
+  const t = useLandingTranslation();
   return (
     <section className="lp-marquee" aria-labelledby="format-heading">
       <div className="lp-marquee-inner lp-container">
         <div className="lp-marquee-label">
-          <h2 id="format-heading">不止于 JSON</h2>
-          <p>数据里的文档、表格与媒体链接，就地打开预览</p>
+          <h2 id="format-heading">{t("不止于 JSON")}</h2>
+          <p>{t("数据里的文档、表格与媒体链接，就地打开预览")}</p>
         </div>
         <p className="lp-sr">{formats.join("、")}</p>
         <div className="lp-marquee-viewport" aria-hidden="true">
@@ -442,6 +459,7 @@ function FormatMarquee() {
 /* ------------------------------------------------------------ bento */
 
 function RepairArt() {
+  const t = useLandingTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, 0.25);
   const reduced = useReducedMotion();
@@ -453,7 +471,7 @@ function RepairArt() {
   }, [inView, reduced]);
   const phase = reduced ? 2 : step;
   return (
-    <div className="lp-repair" ref={ref} data-step={phase} role="img" aria-label="示意：发现 JSON 语法错误并修复">
+    <div className="lp-repair" ref={ref} data-step={phase} role="img" aria-label={t("示意：发现 JSON 语法错误并修复")}>
       <div className="lp-repair-header"><span className="lp-repair-file"><FileCode2 size={14} /> sample.json</span><span className="lp-repair-mode">JSON</span></div>
       <div className="lp-repair-editor" aria-hidden="true">
         <span className="lp-repair-line">1</span>
@@ -462,7 +480,7 @@ function RepairArt() {
       </div>
       <div className="lp-repair-action" aria-hidden="true">
         <span className="lp-repair-dot" />
-        <span>{phase === 0 ? "发现语法问题" : phase === 1 ? "正在修复语法…" : "语法校验通过"}</span>
+        <span>{phase === 0 ? t("发现语法问题") : phase === 1 ? t("正在修复语法…") : t("语法校验通过")}</span>
         {phase === 2 && <Check size={14} />}
       </div>
     </div>
@@ -470,16 +488,17 @@ function RepairArt() {
 }
 
 function DiffArt() {
+  const t = useLandingTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, 0.25);
   return (
-    <div className="lp-diff" ref={ref} data-playing={inView} role="img" aria-label="结构对比示例：角色从 developer 变为 designer，年龄类型发生变化">
-      <div className="lp-diff-header"><span><GitCompareArrows size={14} /> 结构对比</span><span className="lp-diff-count">2 处差异</span></div>
+    <div className="lp-diff" ref={ref} data-playing={inView} role="img" aria-label={t("结构对比示例：角色从 developer 变为 designer，年龄类型发生变化")}>
+      <div className="lp-diff-header"><span><GitCompareArrows size={14} /> {t("结构对比")}</span><span className="lp-diff-count">{t("2 处差异")}</span></div>
       <div className="lp-diff-code" aria-hidden="true">
         <div className="lp-diff-context"><span>1</span><code>{'"name": "Ada",'}</code></div>
         <div className="lp-diff-row is-del"><span>−</span><code>{'"role": "developer"'}</code></div>
         <div className="lp-diff-row is-add"><span>+</span><code>{'"role": "designer"'}</code></div>
-        <div className="lp-diff-row is-type"><span>~</span><code>{'"age": 36 → "36"'}</code><small>类型</small></div>
+        <div className="lp-diff-row is-type"><span>~</span><code>{'"age": 36 → "36"'}</code><small>{t("类型")}</small></div>
       </div>
     </div>
   );
@@ -503,6 +522,7 @@ function highlightTypeCode(line: string) {
 }
 
 function TypesArt() {
+  const t = useLandingTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, 0.25);
   const reduced = useReducedMotion();
@@ -515,8 +535,8 @@ function TypesArt() {
   }, [inView, reduced, selected]);
   return (
     <div className="lp-types" ref={ref}>
-      <div className="lp-types-header"><span><FileCode2 size={14} /> 生成类型</span><span className="lp-types-status"><i /> 已生成</span></div>
-      <div className="lp-types-tabs" role="group" aria-label="选择类型语言">
+      <div className="lp-types-header"><span><FileCode2 size={14} /> {t("生成类型")}</span><span className="lp-types-status"><i /> {t("已生成")}</span></div>
+      <div className="lp-types-tabs" role="group" aria-label={t("选择类型语言")}>
         {typeSamples.map(([language], i) => (
           <button key={language} type="button" aria-pressed={i === index}
             onClick={() => { setIndex(i); setSelected(true); }}>
@@ -524,12 +544,13 @@ function TypesArt() {
           </button>
         ))}
       </div>
-      <pre key={index} aria-label={`${typeSamples[index][0]} 类型示例`}><code>{typeSamples[index][1].split('\n').map((line, i) => <span className="lp-types-line" key={i}><span className="lp-types-line-number" aria-hidden="true">{i + 1}</span><span>{highlightTypeCode(line || ' ')}</span></span>)}</code></pre>
+      <pre key={index} aria-label={`${typeSamples[index][0]} ${t('类型示例')}`}><code>{typeSamples[index][1].split('\n').map((line, i) => <span className="lp-types-line" key={i}><span className="lp-types-line-number" aria-hidden="true">{i + 1}</span><span>{highlightTypeCode(line || ' ')}</span></span>)}</code></pre>
     </div>
   );
 }
 
 function PreviewArt() {
+  const t = useLandingTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, 0.25);
   const reduced = useReducedMotion();
@@ -541,16 +562,16 @@ function PreviewArt() {
   }, [inView, reduced]);
   const pdf = index === 0;
   return (
-    <div className="lp-preview-art" ref={ref} role="img" aria-label="示意：在编辑器旁预览链接指向的文档">
+    <div className="lp-preview-art" ref={ref} role="img" aria-label={t("示意：在编辑器旁预览链接指向的文档")}>
       <div className="lp-preview-source" aria-hidden="true">
-        <span className="lp-preview-source-label">数据 <span>JSON</span></span>
+        <span className="lp-preview-source-label">{t("数据")}<span>JSON</span></span>
         <code><span className="tk-key">"{pdf ? 'report' : 'readme'}"</span>: <span className="tk-str lp-link-cursor">"https://…/{pdf ? 'report.pdf' : 'guide.md'}"</span></code>
       </div>
       <div className="lp-preview-pane" aria-hidden="true">
-        <div className="lp-preview-head"><FileText size={13} /> 预览 <span>{pdf ? 'report.pdf' : 'guide.md'}</span></div>
+        <div className="lp-preview-head"><FileText size={13} /> {t("预览")}<span>{pdf ? 'report.pdf' : 'guide.md'}</span></div>
         <div className="lp-preview-document" key={index}>
-          {pdf ? <div className="lp-preview-paper"><small>QUARTERLY REPORT</small><b>项目进展</b><p>产品与数据概览</p><i /><i /><i /></div>
-            : <div className="lp-preview-markdown"><b>使用指南</b><p>快速开始</p><i /><i /><span>了解更多 →</span></div>}
+          {pdf ? <div className="lp-preview-paper"><small>QUARTERLY REPORT</small><b>{t("项目进展")}</b><p>{t("产品与数据概览")}</p><i /><i /><i /></div>
+            : <div className="lp-preview-markdown"><b>{t("使用指南")}</b><p>{t("快速开始")}</p><i /><i /><span>{t("了解更多 →")}</span></div>}
         </div>
       </div>
     </div>
@@ -558,16 +579,17 @@ function PreviewArt() {
 }
 
 function ProductivityArt() {
+  const t = useLandingTranslation();
   return (
-    <div className="lp-productivity-art" role="img" aria-label="本地历史记录示意：按文件名查找已保存的文档">
-      <div className="lp-history-search" aria-hidden="true"><Search size={13} /> 搜索文件名…</div>
-      <div className="lp-history-group">最近使用</div>
+    <div className="lp-productivity-art" role="img" aria-label={t("本地历史记录示意：按文件名查找已保存的文档")}>
+      <div className="lp-history-search" aria-hidden="true"><Search size={13} /> {t("搜索文件名…")}</div>
+      <div className="lp-history-group">{t("最近使用")}</div>
       <div className="lp-history-list" aria-hidden="true">
-        <div><Pin size={13} /><span>orders.json</span><small>已置顶</small></div>
+        <div><Pin size={13} /><span>orders.json</span><small>{t("已置顶")}</small></div>
         <div><FileText size={13} /><span>settings.jsonc</span></div>
         <div><FileText size={13} /><span>events.jsonl</span></div>
       </div>
-      <div className="lp-history-local">仅保存在此浏览器</div>
+      <div className="lp-history-local">{t("仅保存在此浏览器")}</div>
     </div>
   );
 }
@@ -606,17 +628,17 @@ const features = [
 ];
 
 function Features() {
+  const t = useLandingTranslation();
   return (
     <section className="lp-section lp-container lp-features" id="features">
-      <SectionHead center title="为真实工作流，把细节做好。">
-        从修复语法到检查结构、生成类型与预览关联文件。每项能力都围绕处理数据时的实际步骤设计。
-      </SectionHead>
+      <SectionHead center title={t("为真实工作流，把细节做好。")}>
+        {t("从修复语法到检查结构、生成类型与预览关联文件。每项能力都围绕处理数据时的实际步骤设计。")}</SectionHead>
       <div className="lp-feature-grid">
         {features.map(({ icon: FeatureIcon, title, text, art }, i) => (
           <article className="lp-feature-card" data-feature={i + 1} key={title}>
             <div className="lp-feature-card-copy">
-              <h3><FeatureIcon size={21} strokeWidth={1.8} aria-hidden="true" />{title}</h3>
-              <p>{text}</p>
+              <h3><FeatureIcon size={21} strokeWidth={1.8} aria-hidden="true" />{t(title)}</h3>
+              <p>{t(text)}</p>
             </div>
             <div className="lp-feature-art">{art}</div>
           </article>
@@ -639,6 +661,7 @@ const flowOutputs = [
 ];
 
 function FlowDiagram() {
+  const t = useLandingTranslation();
   const container = useRef<HTMLDivElement>(null);
   const core = useRef<HTMLDivElement>(null);
   const nodes = useRef<(HTMLDivElement | null)[]>([]);
@@ -688,8 +711,8 @@ function FlowDiagram() {
         <Icon size={16} />
       </span>
       <div>
-        <b>{label}</b>
-        <small>{hint}</small>
+        <b>{t(label)}</b>
+        <small>{t(hint)}</small>
       </div>
     </div>
   );
@@ -721,10 +744,9 @@ function FlowDiagram() {
         <span className="lp-flow-ring" aria-hidden="true" />
         <img src={logo} alt="" width="44" height="44" />
         <b>JsonSage</b>
-        <small>校验 · 修复 · 查看</small>
+        <small>{t("校验 · 修复 · 查看")}</small>
         <small className="lp-flow-worker">
-          <Cpu size={11} /> 浏览器本地处理
-        </small>
+          <Cpu size={11} /> {t("浏览器本地处理")}</small>
       </div>
       <div className="lp-flow-column">
         {flowOutputs.map((node, i) => renderNode(node, flowInputs.length + i))}
@@ -734,9 +756,10 @@ function FlowDiagram() {
 }
 
 function Workflow() {
+  const t = useLandingTranslation();
   return (
     <section className="lp-section lp-container" id="flow">
-      <SectionHead center title="一个工作区，完成数据处理" />
+      <SectionHead center title={t("一个工作区，完成数据处理")} />
       <FlowDiagram />
     </section>
   );
@@ -752,17 +775,18 @@ const stats = [
 ];
 
 function Performance() {
+  const t = useLandingTranslation();
   return (
     <section className="lp-section lp-container" id="performance">
-      <SectionHead center title="为大文件而设计" />
+      <SectionHead center title={t("为大文件而设计")} />
       <div className="lp-stats" data-reveal>
         {stats.map(({ value, decimals, unit, label }) => (
           <div key={label} className="lp-stat" onPointerMove={trackPointer}>
             <div className="lp-stat-value">
               <NumberTicker value={value} decimals={decimals} />
-              <small>{unit}</small>
+              <small>{t(unit)}</small>
             </div>
-            <b>{label}</b>
+            <b>{t(label)}</b>
           </div>
         ))}
       </div>
@@ -779,11 +803,12 @@ const privacyFacts = [
 ];
 
 function Privacy() {
+  const t = useLandingTranslation();
   return (
     <section className="lp-dark" id="privacy">
       <div className="lp-dark-grid" aria-hidden="true" />
       <div className="lp-container lp-privacy-heading">
-        <SectionHead center title="隐私保护，边界清晰" />
+        <SectionHead center title={t("隐私保护，边界清晰")} />
       </div>
       <div className="lp-container lp-facts">
         {privacyFacts.map(({ title, text }, i) => (
@@ -792,25 +817,25 @@ function Privacy() {
               {i === 0 ? (
                 <div className="lp-privacy-browser">
                   <div className="lp-privacy-browser-bar"><i /><i /><i /></div>
-                  <div className="lp-privacy-file"><FileText size={17} /><span>data.json<small>浏览器存储</small></span><History size={15} /></div>
-                  <div className="lp-privacy-file is-muted"><FileText size={17} /><span>config.json<small>浏览器存储</small></span></div>
+                  <div className="lp-privacy-file"><FileText size={17} /><span>data.json<small>{t("浏览器存储")}</small></span><History size={15} /></div>
+                  <div className="lp-privacy-file is-muted"><FileText size={17} /><span>config.json<small>{t("浏览器存储")}</small></span></div>
                 </div>
               ) : i === 1 ? (
                 <div className="lp-privacy-offline">
                   <span className="lp-privacy-orbit" />
                   <span className="lp-privacy-app"><img src={logo} alt="" width="32" height="32" /></span>
-                  <span className="lp-privacy-offline-badge"><WifiOff size={14} /> 离线</span>
+                  <span className="lp-privacy-offline-badge"><WifiOff size={14} /> {t("离线")}</span>
                 </div>
               ) : (
                 <div className="lp-privacy-network">
                   <span><Link2 size={20} /><small>URL</small></span>
-                  <div className="lp-privacy-route"><i /><b>无 Cookie</b></div>
-                  <span><img src={logo} alt="" width="24" height="24" /><small>浏览器</small></span>
+                  <div className="lp-privacy-route"><i /><b>{t("无 Cookie")}</b></div>
+                  <span><img src={logo} alt="" width="24" height="24" /><small>{t("浏览器")}</small></span>
                 </div>
               )}
             </div>
-            <h3>{title}</h3>
-            <p>{text}</p>
+            <h3>{t(title)}</h3>
+            <p>{t(text)}</p>
           </article>
         ))}
       </div>
@@ -829,6 +854,7 @@ const terminalLines = [
 const stack = ["React 19", "TypeScript", "CodeMirror 6", "Web Worker", "Vite", "PWA", "IndexedDB"];
 
 function OpenSource() {
+  const t = useLandingTranslation();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const commands = terminalLines.filter((line) => line.prompt).map((line) => line.text);
@@ -844,14 +870,14 @@ function OpenSource() {
   return (
     <section className="lp-section lp-container lp-open" id="open-source">
       <div>
-        <SectionHead title="开源，也可自主部署" />
+        <SectionHead title={t("开源，也可自主部署")} />
         <div className="lp-stack" data-reveal>
           {stack.map((item) => (
             <span key={item}>{item}</span>
           ))}
         </div>
         <a className="lp-link" href={repository} target="_blank" rel="noreferrer" data-reveal>
-          <Github size={16} /> 在 GitHub 上查看源码 <ArrowUpRight size={14} />
+          <Github size={16} /> {t("在 GitHub 上查看源码")}<ArrowUpRight size={14} />
         </a>
       </div>
       <div className="lp-terminal" data-reveal>
@@ -862,9 +888,9 @@ function OpenSource() {
             <i />
           </div>
           <span>Terminal</span>
-          <button type="button" onClick={copy} aria-label="复制命令">
+          <button type="button" onClick={copy} aria-label={t("复制命令")}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? "已复制" : "复制"}
+            {copied ? t("已复制") : t("复制")}
           </button>
         </div>
         <pre><code>
@@ -919,6 +945,12 @@ function CtaBeams() {
 }
 
 export default function LandingPage() {
+  const [language, setLanguage] = useLanguage();
+  return <LandingLanguage.Provider value={language}><LandingContent language={language} onLanguageChange={setLanguage} /></LandingLanguage.Provider>;
+}
+
+function LandingContent({ language, onLanguageChange }: { language: Language; onLanguageChange: (language: Language) => void }) {
+  const t = useLandingTranslation();
   const root = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() =>
@@ -955,10 +987,6 @@ export default function LandingPage() {
   }, [theme]);
 
   useEffect(() => {
-    const previousTitle = document.title;
-    const previousLanguage = document.documentElement.lang;
-    document.title = "JsonSage — 看清 JSON，高效处理，数据留在本地";
-    document.documentElement.lang = "zh-CN";
     const element = root.current!;
     const observer = new IntersectionObserver(
       (entries) =>
@@ -987,38 +1015,61 @@ export default function LandingPage() {
       observer.disconnect();
       window.removeEventListener("scroll", schedule);
       cancelAnimationFrame(frame);
-      document.title = previousTitle;
-      document.documentElement.lang = previousLanguage;
     };
   }, []);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    return () => { document.title = previousTitle; };
+  }, []);
+
+  useEffect(() => {
+    document.title = language === 'zh' ? 'JsonSage — 看清 JSON，高效处理，数据留在本地' : 'JsonSage — Understand JSON, keep data local';
+  }, [language]);
 
   return (
     <div className="lp" id="home" ref={root} data-theme={theme}>
       <a className="lp-skip" href="#main">
-        跳至主要内容
-      </a>
+        {t("跳至主要内容")}</a>
       <header className="lp-header">
         <div className="lp-container lp-nav">
-          <a href="#home" className="lp-brand" aria-label="JsonSage 首页">
+          <a href="#home" className="lp-brand" aria-label={t("JsonSage 首页")}>
             <img src={logo} alt="" width="28" height="28" />
             JsonSage
           </a>
           <nav
-            aria-label="主导航"
+            aria-label={t("主导航")}
             id="landing-navigation"
             className={menuOpen ? "lp-links is-open" : "lp-links"}
             onClick={() => setMenuOpen(false)}
           >
-            <a href="#features">功能</a>
-            <a href="#flow">工作流</a>
-            <a href="#performance">性能</a>
-            <a href="#privacy">隐私</a>
+            <a href="#features">{t("功能")}</a>
+            <a href="#flow">{t("工作流")}</a>
+            <a href="#performance">{t("性能")}</a>
+            <a href="#privacy">{t("隐私")}</a>
           </nav>
           <div className="lp-nav-actions">
+            <Select.Root value={language} onValueChange={value => { if (value) onLanguageChange(value); }}>
+              <Select.Trigger className="lp-language-trigger" aria-label={language === 'zh' ? '选择语言' : 'Select language'}>
+                <Globe2 size={16} aria-hidden="true" />
+                <span>{language === 'zh' ? '中文' : 'EN'}</span>
+                <Select.Icon className="lp-language-chevron"><ChevronDown size={13} /></Select.Icon>
+              </Select.Trigger>
+              <Select.Portal container={root}>
+                <Select.Positioner className="lp-language-positioner" sideOffset={8} align="end" alignItemWithTrigger={false}>
+                  <Select.Popup className="lp-language-popup">
+                    <Select.List>
+                      <Select.Item className="lp-language-option" value="en"><Select.ItemText>English</Select.ItemText><Select.ItemIndicator><Check size={15} /></Select.ItemIndicator></Select.Item>
+                      <Select.Item className="lp-language-option" value="zh"><Select.ItemText>简体中文</Select.ItemText><Select.ItemIndicator><Check size={15} /></Select.ItemIndicator></Select.Item>
+                    </Select.List>
+                  </Select.Popup>
+                </Select.Positioner>
+              </Select.Portal>
+            </Select.Root>
             <button
               type="button"
               className="lp-icon-link lp-theme-toggle"
-              aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}
+              aria-label={theme === "light" ? t("切换到深色主题") : t("切换到浅色主题")}
               onClick={toggleTheme}
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
@@ -1028,17 +1079,17 @@ export default function LandingPage() {
               href={repository}
               target="_blank"
               rel="noreferrer"
-              aria-label="GitHub 仓库"
+              aria-label={t("GitHub 仓库")}
             >
               <Github size={18} />
             </a>
             <a className="lp-btn lp-btn-sm" href="#workspace">
-              打开工作区 <ArrowRight size={14} />
+              {t("打开工作区")}<ArrowRight size={14} />
             </a>
             <button
               type="button"
               className="lp-menu"
-              aria-label={menuOpen ? "关闭导航" : "打开导航"}
+              aria-label={menuOpen ? t("关闭导航") : t("打开导航")}
               aria-expanded={menuOpen}
               aria-controls="landing-navigation"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -1057,28 +1108,25 @@ export default function LandingPage() {
           <div className="lp-hero-bg" aria-hidden="true" />
           <div className="lp-container lp-hero-copy">
             <h1>
-              <span className="lp-line">看清 JSON，</span>
+              <span className="lp-line">{t("看清 JSON，")}</span>
               <span className="lp-line">
                 <em>
-                  高效处理
-                  <svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true">
+                  {t("高效处理")}<svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true">
                     <path d="M3 11 C 70 3, 170 3, 297 9" pathLength={1} />
                   </svg>
                 </em>
-                ，
+                {language === 'zh' ? '，' : ','}
               </span>
-              <span className="lp-line lp-line-muted">数据留在本地。</span>
+              <span className="lp-line lp-line-muted">{t("数据留在本地。")}</span>
             </h1>
             <p className="lp-lead">
-              JsonSage 是一个运行在浏览器里的 JSON / JSONC 工作区。编辑、校验、结构对比、类型生成和文件预览，都不需要把数据交给服务器。
-            </p>
+              {t("JsonSage 是一个运行在浏览器里的 JSON / JSONC 工作区。编辑、校验、结构对比、类型生成和文件预览，都不需要把数据交给服务器。")}</p>
             <div className="lp-actions">
               <RainbowButton href="#workspace">
-                打开工作区 <ArrowRight size={16} />
+                {t("打开工作区")}<ArrowRight size={16} />
               </RainbowButton>
               <RainbowButton variant="outline" href={repository} target="_blank" rel="noreferrer">
-                <Github size={16} /> 查看源码
-              </RainbowButton>
+                <Github size={16} /> {t("查看源码")}</RainbowButton>
             </div>
           </div>
           <div className="lp-container lp-hero-product">
@@ -1097,11 +1145,11 @@ export default function LandingPage() {
           <div className="lp-cta-bg" aria-hidden="true"><CtaBeams /></div>
           <div className="lp-container">
             <img src={logo} alt="" width="52" height="52" />
-            <h2>开始处理你的 JSON</h2>
-            <p>无需注册，打开即用。编辑与处理在浏览器中完成。</p>
+            <h2>{t("开始处理你的 JSON")}</h2>
+            <p>{t("无需注册，打开即用。编辑与处理在浏览器中完成。")}</p>
             <div className="lp-actions">
               <RainbowButton href="#workspace">
-                打开工作区 <ArrowRight size={16} />
+                {t("打开工作区")}<ArrowRight size={16} />
               </RainbowButton>
             </div>
           </div>

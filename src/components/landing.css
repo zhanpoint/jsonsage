@@ -161,6 +161,16 @@
 .lp-links a { font-size: 13px; font-weight: 500; color: var(--lp-sub); transition: color 0.16s; }
 .lp-links a:hover { color: var(--lp-accent); }
 .lp-nav-actions { display: flex; align-items: center; gap: 12px; }
+.lp-language-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--lp-sub); font: 600 12px/1 var(--lp-sans); cursor: pointer; transition: color .16s, background .16s, border-color .16s; }
+.lp-language-trigger:hover, .lp-language-trigger[data-popup-open] { color: var(--lp-ink); background: var(--lp-surf2); border-color: var(--lp-line); }
+.lp-language-trigger:focus-visible { outline: 2px solid var(--lp-accent); outline-offset: 2px; }
+.lp-language-chevron { display: flex; transition: transform .16s; }
+.lp-language-trigger[data-popup-open] .lp-language-chevron { transform: rotate(180deg); }
+.lp-language-positioner { z-index: 100; outline: none; }
+.lp-language-popup { min-width: 152px; padding: 5px; border: 1px solid var(--lp-line); border-radius: 8px; background: var(--lp-surface); color: var(--lp-ink); box-shadow: 0 10px 30px #0003; outline: none; }
+.lp-language-option { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 36px; padding: 0 10px; border-radius: 5px; font: 500 13px/1.4 var(--lp-sans); cursor: pointer; outline: none; }
+.lp-language-option[data-highlighted] { background: var(--lp-surf2); }
+.lp-language-option[data-selected] { color: var(--lp-accent); }
 .lp-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; color: var(--lp-sub); transition: color 0.16s, background 0.16s; }
 .lp-icon-link:hover { color: var(--lp-ink); background: var(--lp-line); }
 .lp-menu { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--lp-line); border-radius: 8px; background: none; color: var(--lp-ink); cursor: pointer; transition: background 0.16s; }
@@ -973,6 +983,8 @@ h1 { margin: 0; }
 
 }
 @media (max-width: 440px) {
+  .lp-nav-actions { gap: 6px; }
+  .lp-nav-actions > .lp-btn { display: none; }
   .lp-footer .lp-container { flex-direction: column; align-items: flex-start; }
   .lp-footer span { flex: none; }
 }

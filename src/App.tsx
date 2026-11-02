@@ -45,8 +45,8 @@ import type { DocumentView } from './lib/documentWorkspace';
 import { newHistoryDraft, type HistoryDraft } from './lib/historySession';
 import { sampleDocument } from './lib/sampleDocument';
 import { historyError, historyStore, HistoryConflict, type HistoryEntry } from './lib/history';
+import { useLanguage, type Language } from './lib/language';
 
-type Language = 'en' | 'zh';
 type Theme = 'light' | 'dark';
 
 const palettes = [
@@ -153,11 +153,7 @@ function localizedDiagnostic(diagnostic: JsonDiagnostic, language: Language) {
 }
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('jsonsage-language');
-    if (saved === 'zh' || saved === 'en') return saved;
-    return 'zh';
-  });
+  const [language, setLanguage] = useLanguage();
   const [theme, setTheme] = useState<Theme>(() => localStorage.getItem('jsonsage-theme') === 'light' ? 'light' : 'dark');
   const [palette, setPalette] = useState<PaletteId>(() => {
     const saved = localStorage.getItem('jsonsage-palette');
@@ -170,10 +166,6 @@ export default function App() {
   const palettePickerRef = useRef<HTMLDivElement>(null);
   const paletteButtonRef = useRef<HTMLButtonElement>(null);
   const t = messages[language];
-  useEffect(() => {
-    localStorage.setItem('jsonsage-language', language);
-    document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
-  }, [language]);
   useEffect(() => {
     localStorage.setItem('jsonsage-theme', theme);
   }, [theme]);
