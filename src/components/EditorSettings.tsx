@@ -7,13 +7,15 @@ import { HelpTooltip } from './ui/HelpTooltip';
 interface Props {
   language: 'en' | 'zh';
   indent: Indent;
+  fontSize: number;
+  onFontSizeChange: (value: number) => void;
   autoSave: boolean;
   onAutoSaveChange: (value: boolean) => void;
   onIndentChange: (value: Indent) => void;
   onShortcuts: () => void;
 }
 
-export function EditorSettings({ language, indent, onIndentChange, autoSave, onAutoSaveChange, onShortcuts }: Props) {
+export function EditorSettings({ language, indent, onIndentChange, fontSize, onFontSizeChange, autoSave, onAutoSaveChange, onShortcuts }: Props) {
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLElement | null>(null);
   const zh = language === 'zh';
@@ -32,6 +34,9 @@ export function EditorSettings({ language, indent, onIndentChange, autoSave, onA
           <input type="radio" name="editor-indent" value={value} checked={indent === value} onChange={() => onIndentChange(value)} />
           <span>{value === 'tab' ? 'Tab' : zh ? `${value} 空格` : `${value} spaces`}</span>
         </label>)}</div>
+      </fieldset>
+      <fieldset className="settings-group"><legend>{zh ? '工作区缩放' : 'Workspace zoom'}: {Math.round(fontSize / 13 * 100)}%</legend>
+        <input className="settings-font-size" type="range" min="10" max="24" step="1" value={fontSize} aria-label={zh ? '工作区缩放' : 'Workspace zoom'} aria-valuetext={`${Math.round(fontSize / 13 * 100)}%`} onChange={event => onFontSizeChange(Number(event.target.value))} />
       </fieldset>
       <button className="settings-shortcuts" onClick={() => { setOpen(false); onShortcuts(); }}><Keyboard size={16} /><span>{zh ? '快捷键设置' : 'Keyboard shortcuts'}</span><ChevronRight size={14} /></button>
     </Popover.Popup></Popover.Positioner></Popover.Portal>

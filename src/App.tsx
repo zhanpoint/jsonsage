@@ -244,6 +244,34 @@ export default function App() {
     return saved === '4' || saved === 'tab' ? saved : '2';
   });
   useEffect(() => { localStorage.setItem('jsonsage-indent', indent); }, [indent]);
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = Number(localStorage.getItem('jsonsage-font-size'));
+    return Number.isInteger(saved) && saved >= 10 && saved <= 24 ? saved : 13;
+  });
+  useEffect(() => {
+    localStorage.setItem('jsonsage-font-size', String(fontSize));
+    document.documentElement.style.setProperty('--workspace-zoom', String(fontSize / 13));
+  }, [fontSize]);
+  useEffect(() => {
+    const resize = (delta: number) => setFontSize(size => Math.max(10, Math.min(24, size + delta)));
+    const isEditor = (target: EventTarget | null) => target instanceof Element && !!target.closest('.editor-viewport');
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || event.altKey || event.metaKey || !isEditor(event.target)) return;
+      const delta = event.key === '-' || event.key === '_' ? -1 : event.key === '+' || event.key === '=' ? 1 : 0;
+      if (delta) { event.preventDefault(); resize(delta); }
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey || event.altKey || event.metaKey || !event.deltaY || !isEditor(event.target)) return;
+      event.preventDefault();
+      resize(event.deltaY < 0 ? 1 : -1);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('wheel', onWheel, true);
+    };
+  }, []);
   const [notice, storeNotice] = useState<{ text: string; error: boolean } | null>(null);
   const latestMessages = useRef(t); latestMessages.current = t;
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -519,7 +547,7 @@ export default function App() {
           <GitHubLink language={language} />
           <HelpTooltip side="bottom" label={`${commandsById.palette.label} · ${shortcutLabel(shortcuts.bindings.palette)}`}><button className="header-control command-trigger" data-tone="violet" onClick={() => setCommandOpen(true)} aria-label={commandsById.palette.label}><Command size={16} /><span>{language === 'zh' ? '命令' : 'Commands'}</span></button></HelpTooltip>
           {install.available && <HelpTooltip side="bottom" label={commandsById.install.label}><button className="header-control" onClick={() => void install.install()} aria-label={commandsById.install.label}><MonitorDown size={16} /><span>{language === 'zh' ? '安装' : 'Install'}</span></button></HelpTooltip>}
-          <EditorSettings language={language} indent={indent} onIndentChange={setIndent} autoSave={autoSave} onAutoSaveChange={setAutoSave} onShortcuts={() => setShortcutsOpen(true)} />
+          <EditorSettings language={language} indent={indent} onIndentChange={setIndent} fontSize={fontSize} onFontSizeChange={setFontSize} autoSave={autoSave} onAutoSaveChange={setAutoSave} onShortcuts={() => setShortcutsOpen(true)} />
           <div className="language-picker" ref={languagePickerRef}>
             <HelpTooltip side="bottom" label={t.language}>
             <button

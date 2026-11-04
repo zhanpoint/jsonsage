@@ -88,6 +88,14 @@ export default function CodeEditor(props: Props) {
             indentWithTab, ...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap,
           ]),
           EditorView.updateListener.of(update => {
+            if (update.docChanged && update.transactions.some(transaction => transaction.isUserEvent('input.paste'))) {
+              const document = update.state.doc;
+              update.view.requestMeasure({ read: () => null, write: () => {
+                requestAnimationFrame(() => {
+                  if (view.current === update.view && update.view.state.doc === document) update.view.scrollDOM.scrollLeft = 0;
+                });
+              } });
+            }
             if (update.selectionSet || update.docChanged) latest.current.onCursor?.(update.state.selection.main.head, update.docChanged);
             if (update.docChanged && !update.transactions.some(transaction => transaction.annotation(externalChange))) {
               if (update.state.doc.length > LARGE_DOCUMENT) {
