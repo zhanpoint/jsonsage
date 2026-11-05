@@ -176,7 +176,7 @@
 
 .cm-httpLink { color: #4774c8; text-decoration: underline; text-decoration-color: #9db4e5; text-underline-offset: 2px; }
 
-.editor-viewport { position: relative; display: flex; flex-direction: column; min-height: 300px; overflow: hidden; }
+.editor-viewport { position: relative; display: flex; flex-direction: column; height: max(300px, calc(100dvh - 300px)); min-height: 300px; overflow: hidden; }
 .editor-content > .code-view, .editor-content > .data-view, .editor-content > .analysis-tools { flex: 1; min-height: 0; }
 .code-view:not(.linked-editors), .editor-content > .data-view, .analysis-tools { display: flex; flex-direction: column; }
 .code-view[hidden] { display: none; }
